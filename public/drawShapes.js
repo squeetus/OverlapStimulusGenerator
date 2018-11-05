@@ -8,6 +8,22 @@ function tmp() {
   return tmp.toString();
 }
 
+function dot() {
+  var path =
+    "m " + -0.5 + ", 0" +
+    "a " + 0.5 + "," + 0.5 + " 0 1, 0 " + (0.5*2) + ", 0" +
+    "a " + 0.5 + "," + 0.5 + " 0 1, 0 " + -(0.5*2) + ", 0";
+  return path;
+}
+
+function circle() {
+  var path =
+    "m " + -bcr + ", 0" +
+    "a " + bcr + "," + bcr + " 0 1, 0 " + (bcr*2) + ", 0" +
+    "a " + bcr + "," + bcr + " 0 1, 0 " + -(bcr*2) + ", 0";
+  return path;
+}
+
 function pentagon() {
   var p = d3.path();
   p.moveTo(bcr * Math.cos(degToRad(-18)), bcr * Math.sin(degToRad(-18)));
@@ -98,47 +114,52 @@ var threeLine = function() {
 
 
 
-function dots() {
+// function dots() {
+//   let s = (which == 1) ? shapes : shapes2;
+//   let sv = (which == 1) ? svg : svg2;
+//   let rotate = (which == 1) ? svgRotation : svgRotation2;
+//
+//   s.append("circle")
+//       .classed("shape", true)
+//       .attr("cx", 0)
+//       .attr("cy", 0)
+//       .attr("r", 1)
+//       .style("stroke", "black")
+//       .style("fill-opacity", 1)
+//       .style("opacity", 1);
+// }
+
+// function circles() {
+//   let s = (which == 1) ? shapes : shapes2;
+//   let sv = (which == 1) ? svg : svg2;
+//   let rotate = (which == 1) ? svgRotation : svgRotation2;
+//
+//   s.append("circle")
+//       .classed("shape", true)
+//       .attr("cx", 0)
+//       .attr("cy", 0)
+//       .attr("r", bcr)
+//       .style("stroke", "black")
+//       .style("fill", "none")
+//       .style("fill-opacity", 1)
+//       .style("opacity", 1);
+// }
+
+function drawSymbols(symbol, symbol2) {
   let s = (which == 1) ? shapes : shapes2;
   let sv = (which == 1) ? svg : svg2;
   let rotate = (which == 1) ? svgRotation : svgRotation2;
 
-  s.append("circle")
-      .classed("shape", true)
-      .attr("cx", 0)
-      .attr("cy", 0)
-      .attr("r", 1)
-      .style("stroke", "black")
-      .style("fill-opacity", 1)
-      .style("opacity", 1);
-}
-
-function circles() {
-  let s = (which == 1) ? shapes : shapes2;
-  let sv = (which == 1) ? svg : svg2;
-  let rotate = (which == 1) ? svgRotation : svgRotation2;
-
-  s.append("circle")
-      .classed("shape", true)
-      .attr("cx", 0)
-      .attr("cy", 0)
-      .attr("r", bcr)
-      .style("stroke", "black")
-      .style("fill", "none")
-      .style("fill-opacity", 1)
-      .style("opacity", 1);
-}
-
-function drawSymbols(symbol) {
-  let s = (which == 1) ? shapes : shapes2;
-  let sv = (which == 1) ? svg : svg2;
-  let rotate = (which == 1) ? svgRotation : svgRotation2;
-  
   s.selectAll(".shape").remove();
   s.append("path")
     .classed("shape", true)
     .attr("id", function(d, i) { return i; })
-    .attr("d", symbol())
+    .attr("d", function(d, i) {
+      if(mode == 1) {
+        return i % 2 === 0 ? symbol() : symbol2();
+      }
+      else return symbol();
+    })
     .style("stroke", "black")
     .style("fill", "none")
     .style("fill-opacity", 1)

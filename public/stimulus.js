@@ -12,6 +12,8 @@ var width = 550,
 var numShapes = 100;
 var numShapes2 = 100;
 
+var currSymbol = 1, symbol1 = dot, symbol2 = dot;
+
 // in mode 1, we have one svg. in mode 2, we have two svgs.
 var mode = 1;
 
@@ -23,16 +25,9 @@ var which = 1;
 
 // gaussian distribution
 var mean = width/2, variance = 6000;
-var distribution = gaussian(mean, variance);
 
 // correlation for linear trend task
 var correlation = 0.6; // easy, medium, hard?
-
-// random distribution
-// var distributionRandom = getRandomDistribution();
-
-// var distributionCorrelated = getCorrelatedDistribution(r);
-
 
 
 // radius of bounding circle in pixels
@@ -87,6 +82,19 @@ function toggleWhich() {
   which = (which == 1) ? 2 : 1;
 
   flashBorder();
+}
+
+function toggleShape() {
+  currSymbol = (currSymbol == 1) ? 2 : 1;
+
+  console.log('modifying symbol', currSymbol);
+}
+
+function modifySymbol(s) {
+  if(currSymbol == 1)
+    symbol1 = s;
+  else if(currSymbol == 2)
+    symbol2 = s;
 }
 
 // set of shape positions
@@ -223,31 +231,41 @@ document.addEventListener('keypress', (event) => {
 
   switch(keyName) {
     case "1":
-      dots();
+      modifySymbol(dot);
       break;
     case "2":
-      drawSymbols(circles);
+      modifySymbol(circle);
+      // drawSymbols(circles);
       break;
     case "3":
-      drawSymbols(pentagon);
+      modifySymbol(pentagon);
+      // drawSymbols(pentagon);
       break;
     case "4":
-      drawSymbols(square);
+      modifySymbol(square);
+      // drawSymbols(square);
       break;
     case "5":
-      drawSymbols(triangle);
+      modifySymbol(triangle);
       break;
     case "6":
-      drawSymbols(sixLine);
+      modifySymbol(sixLine);
+      // drawSymbols(sixLine);
       break;
     case "7":
-      drawSymbols(fiveLine);
+      modifySymbol(fiveLine);
+      // drawSymbols(fiveLine);
       break;
     case "8":
-      drawSymbols(fourLine);
+      modifySymbol(fourLine);
+      // drawSymbols(fourLine);
       break;
     case "9":
-      drawSymbols(threeLine);
+      modifySymbol(threeLine);
+      // drawSymbols(threeLine);
+      break;
+    case "d":
+      drawSymbols(symbol1, symbol2);
       break;
     case "r":
       reset();
@@ -260,6 +278,9 @@ document.addEventListener('keypress', (event) => {
       break;
     case "b":
       toggleWhich();
+      break;
+    case "s":
+      toggleShape();
       break;
     case "z":
       rotateSVG();
