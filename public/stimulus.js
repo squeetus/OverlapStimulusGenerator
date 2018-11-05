@@ -8,11 +8,15 @@ var width = 550,
     height = 550,
     center = [width/2, height/2];
 
+// number of shapes in categories 1 and 2
+var numShapes = 100;
+var numShapes2 = 100;
+
 // in mode 1, we have one svg. in mode 2, we have two svgs.
 var mode = 1;
 
-// in distribution 1, we use gaussian. in distribution 2, we use random.
-var whichDistribution = 2;
+// in distribution 1, we use gaussian. in distribution 2, we use random, in 3, correlated.
+var whichDistribution = 3;
 
 // which positions/shapes/svg are we modifying? 1 or 2
 var which = 1;
@@ -21,12 +25,15 @@ var which = 1;
 var mean = width/2, variance = 6000;
 var distribution = gaussian(mean, variance);
 
-// random distribution
-var distributionRandom = getRandomDistribution();
+// correlation for linear trend task
+var correlation = 0.6; // easy, medium, hard?
 
-// number of shapes in categories 1 and 2
-var numShapes = 100;
-var numShapes2 = 100;
+// random distribution
+// var distributionRandom = getRandomDistribution();
+
+// var distributionCorrelated = getCorrelatedDistribution(r);
+
+
 
 // radius of bounding circle in pixels
 //  bcr = 12 assumes a visual angle of ~0.5 degrees for each symbol (????)
@@ -49,16 +56,17 @@ var svg = d3.select("#display")
 var svg2 = d3.select("#display2")
               .attr("width", width)
               .attr("height", height)
-              .style("border", "solid 2px black");
+              .style("border", "solid 2px black")
+              .style("display", "none");
 
 
 // swap between single and double window
 function toggleLayout() {
   if(mode == 1) {
-    svg2.attr("display", "inline");
+    svg2.style("display", "inline");
     mode = 2;
   } else if(mode == 2) {
-    svg2.attr("display", "none");
+    svg2.style("display", "none");
     mode = 1;
   }
 }
@@ -83,23 +91,9 @@ function toggleWhich() {
 
 // set of shape positions
 var shapes, shapes2;
-shapes = svg.selectAll(".shape")
-        .data([...Array(numShapes).keys()])
-        .enter().append("g")
-          .classed("shapecontainer", true)
-          .attr('transform', function(d, i) {
-            return 'translate(' +  distribution.ppf(Math.random()) + ',' +
-            distribution.ppf(Math.random()) + ') rotate(' + (-svgRotation)  + ' 0 0)';
-          });
+shapes = svg.selectAll(".shape");
 
-shapes2 = svg2.selectAll(".shape")
-        .data([...Array(numShapes2).keys()])
-        .enter().append("g")
-          .classed("shapecontainer", true)
-          .attr('transform', function(d, i) {
-            return 'translate(' +  distribution.ppf(Math.random()) + ',' +
-            distribution.ppf(Math.random()) + ') rotate(' + (-svgRotation2)  + ' 0 0)';
-          });
+shapes2 = svg2.selectAll(".shape");
 
 // remove all shapes in the svg areas and resample both
 function reset() {
@@ -116,27 +110,24 @@ function resample() {
   let rotate = (which == 1) ? svgRotation : svgRotation2;
   let ns = (which == 1) ? numShapes : numShapes2;
 
+  let positions;
+
   if(whichDistribution == 1) {
-    distribution.ppf(Math.random());
-    s = sv.selectAll(".shape")
-            .data([...Array(ns).keys()])
-            .enter().append("g")
-              .classed("shapecontainer", true)
-              .attr('transform', function(d, i) {
-                return 'translate(' +  distribution.ppf(Math.random()) + ',' +
-                distribution.ppf(Math.random()) + ') rotate(' + (-rotate)  + ' 0 0)';
-              });
+    positions = getGaussianDistribution();
   } else if(whichDistribution == 2) {
-    pos = getRandomDistribution();
-    s = sv.selectAll(".shape")
-            .data([...Array(ns).keys()])
-            .enter().append("g")
-              .classed("shapecontainer", true)
-              .attr('transform', function(d, i) {
-                return 'translate(' +  pos[i][0] + ',' +
-                pos[i][1] + ') rotate(' + (-rotate)  + ' 0 0)';
-              });
+    positions = getRandomDistribution();
+  } else if(whichDistribution == 3) {
+    positions = getCorrelatedDistribution();
   }
+
+  s = sv.selectAll(".shape")
+          .data([...Array(ns).keys()])
+          .enter().append("g")
+            .classed("shapecontainer", true)
+            .attr('transform', function(d, i) {
+              return 'translate(' +  positions[i][0] + ',' +
+              positions[i][1] + ') rotate(' + (-rotate)  + ' 0 0)';
+            });
 
   // make sure original shape variables are exposed
   if(which == 1)
@@ -145,14 +136,77 @@ function resample() {
     shapes2 = s;
 }
 
+// get a gaussian distribution of x and y positions
+function getGaussianDistribution() {
+  var num = (which == 1) ? numShapes : numShapes2;
+  var positions = [];
+  var x, y;
+
+  distribution = gaussian(mean, variance);
+
+  for(var i = 0; i < num; i++) {
+    x = distribution.ppf(Math.random());
+    y = distribution.ppf(Math.random());
+    positions.push([x,y]);
+  }
+  return positions;
+}
+
+function getCorrelatedDistribution() {
+  var num = (which == 1) ? numShapes : numShapes2;
+  var positions = [];
+  var x, y;
+
+  distribution = gaussian(mean, variance);
+  // get a gaussian distribution of x and y positions
+  positions = getGaussianDistribution();
+
+  // // transform each y to y'
+  var l = lambda(correlation);
+  for(i = 0; i < num; i++) {
+    x = positions[i][0];
+    y = positions[i][1];
+    positions[i][1] = (((l*x) + ((1-l)*y))/(Math.sqrt((l*l) + ((1-l)*(1-l)))));
+  }
+
+  // if any point is > 2.5 stddev from mean, remove it and generate a new point
+
+
+
+  // adjust points?
+
+  // rescale?
+
+  // recenter
+  var thisCenter = averagePosition(positions);
+  var deltas = [
+    thisCenter[0] - center[0],
+    thisCenter[1] - center[1]
+  ];
+
+  for(i = 0; i < num; i++) {
+    positions[i][0] -= deltas[0];
+    positions[i][1] -= deltas[1];
+  }
+
+  return positions;
+}
+// lambda function used in the transformation of y' positions.
+// r is the desired correlation.
+function lambda(r) {
+  return (((r*r)-Math.sqrt((r*r)-(r*r*r*r)))/((2*r*r)-1));
+}
+
+
+
 function getRandomDistribution() {
   var num = (which == 1) ? numShapes : numShapes2;
   var positions = [];
   var x, y;
 
   for(var i = 0; i < num; i++) {
-    x = (Math.random() * ((width-2*bcr)-2*bcr)) + 2*bcr;
-    y = (Math.random() * ((height-2*bcr)-2*bcr)) + 2*bcr;
+    x = ((Math.random() * ((width-2*bcr)-2*bcr)) + 2*bcr).toFixed(3);
+    y = ((Math.random() * ((height-2*bcr)-2*bcr)) + 2*bcr).toFixed(3);
 
     positions.push([x,y]);
   }
@@ -250,6 +304,9 @@ function sendPositions() {
   var data = {};
   var tmp = which;
 
+  // associate the points with an id or set of conditions
+  //data.id = condition+...+structure(etc)
+
   which = 1;
   data.pos1 = getPositions();
   which = 2;
@@ -268,7 +325,7 @@ function averagePosition(positions) {
     avgPos[0]+=positions[i][0];
     avgPos[1]+=positions[i][1];
   }
-  return(avgPos[0]/positions.length,avgPos[1]/positions.length);
+  return([avgPos[0]/positions.length,avgPos[1]/positions.length]);
 }
 
 // compute the average of an array of numbers
