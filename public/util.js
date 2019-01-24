@@ -11,13 +11,12 @@ function degToRad(deg) {
   return deg*0.01745329252;
 }
 
-// computes and returns an array of [x,y] positions for all shapes
-function getPositions() {
-  let s = (which == 1) ? shapes : shapes2;
-
+// computes and returns an array of [x,y] positions for all shapes (in specified svg)
+function getPositions(which) {
+  var sv = (which == 2) ? svg2 : svg;
   var positions = [];
   // s.each(function(d) {
-  d3.selectAll(".shapecontainer").each(function(d) {
+  sv.selectAll(".shapecontainer").each(function(d) {
     translate = d3.select(this).attr("transform");
     pos = translate.substring(translate.indexOf("(")+1, translate.indexOf(")")).split(",");
     pos[0] = +pos[0];
@@ -138,7 +137,8 @@ function computeOverlapPercentage(positions) {
     }
   }
 
-  console.log(overlaps/positions.length, 'overlap percentage');
+  // console.log(overlaps/positions.length, 'overlap percentage');
+  return overlaps/positions.length;
 }
 
 // Find the symbols within the specified circle (brute force)

@@ -9,8 +9,12 @@ var width = 500,
     center = [width/2, height/2];
 
 // number of shapes in categories 1 and 2
-var numShapes = 20;
-var numShapes2 = 80;
+var numShapes = 37;
+var numShapes2 = 63;
+
+// proportion of shapes in each display that should have overlaps
+var desiredOverlapPercentage = 0.3;
+var desiredOverlapPercentage2 = 0.7;
 
 var currSymbol = 1, symbol1 = dot, symbol2 = dot;
 
@@ -89,7 +93,11 @@ function modifySymbol(s) {
 }
 
 function redrawSymbols() {
-  drawNumerosityTogether(getPositions(), symbol1, numShapes, symbol2, numShapes2);
+  if(mode == 1) {
+    drawNumerosityTogether(getPositions(), symbol1, numShapes, symbol2, numShapes2);
+  } else if(mode == 2) {
+    drawNumerositySeparately(getPositions(1), symbol1, numShapes, getPositions(2), symbol2, numShapes2);
+  }
 }
 
 // set of shape positions
@@ -166,22 +174,20 @@ function drawNumerosityTogether(positions, symbol, count, symbol2, count2) {
 
 
 
-function drawNumerositySeparately(positions, symbol, count, symbol2, count2) {
-  // let s = (which == 1) ? shapes : shapes2;
-  let sv = (which == 1) ? svg : svg2;
-  let rotate = (which == 1) ? svgRotation : svgRotation2;
-
+function drawNumerositySeparately(positions, symbol, count, positions2, symbol2, count2) {
   // keep track of how many of each type have been drawn
   let drawn = 0, drawn2 = 0;
 
-  sv.selectAll(".shapecontainer").remove();
-  s = sv.selectAll(".shape")
+  // left
+
+  svg.selectAll(".shapecontainer").remove();
+  s = svg.selectAll(".shape")
           .data([...Array(positions.length).keys()])
           .enter().append("g")
             .classed("shapecontainer", true)
             .attr('transform', function(d, i) {
               return 'translate(' +  positions[i][0] + ',' +
-              positions[i][1] + ') rotate(' + (-rotate)  + ' 0 0)';
+              positions[i][1] + ') rotate(' + (-svgRotation)  + ' 0 0)';
             });
   s.append("path")
     // .attr("class", function(d, i) {
@@ -193,32 +199,53 @@ function drawNumerositySeparately(positions, symbol, count, symbol2, count2) {
     .classed("shape", true)
     .attr("id", function(d, i) { return i; })
     .attr("d", function(d, i) {
-      if(i % 2 == 0) { // even positions are symbol1
-        if(drawn < count) {
-          drawn++;
-          return symbol();
-        } else {
-          return symbol2();
-        }
-      } else {
-        if(drawn2 < count2) {
-          drawn2++;
-          return symbol2();
-        } else {
-          return symbol();
-        }
-      }
+        return symbol();
     })
     .style("stroke", "black")
     .style("fill", "none")
     .style("fill-opacity", 1)
     .style("opacity", 1);
 
-  sv.selectAll(".shapecontainer")
+  svg.selectAll(".shapecontainer")
     .attr("transform", function(d,i) {
       var myXform = d3.select(this).attr("transform");
-      return myXform.slice(0, myXform.indexOf("rotate")) + ' rotate(' + (-rotate)  + ' 0 0)';
+      return myXform.slice(0, myXform.indexOf("rotate")) + ' rotate(' + (-svgRotation)  + ' 0 0)';
     });
+
+
+    // right
+
+    svg2.selectAll(".shapecontainer").remove();
+    s = svg2.selectAll(".shape")
+            .data([...Array(positions2.length).keys()])
+            .enter().append("g")
+              .classed("shapecontainer", true)
+              .attr('transform', function(d, i) {
+                return 'translate(' +  positions2[i][0] + ',' +
+                positions2[i][1] + ') rotate(' + (-svgRotation2)  + ' 0 0)';
+              });
+    s.append("path")
+      // .attr("class", function(d, i) {
+      //   if(mode == 1) {
+      //     return i % 2 === 0 ? getName(symbol) : getName(symbol2);
+      //   }
+      //   else return getName(symbol);
+      // })
+      .classed("shape", true)
+      .attr("id", function(d, i) { return i; })
+      .attr("d", function(d, i) {
+          return symbol2();
+      })
+      .style("stroke", "black")
+      .style("fill", "none")
+      .style("fill-opacity", 1)
+      .style("opacity", 1);
+
+    svg2.selectAll(".shapecontainer")
+      .attr("transform", function(d,i) {
+        var myXform = d3.select(this).attr("transform");
+        return myXform.slice(0, myXform.indexOf("rotate")) + ' rotate(' + (-svgRotation2)  + ' 0 0)';
+      });
 }
 
 
@@ -338,7 +365,7 @@ function getOverlapDistribution(num, desiredOverlap) {
       // if the overlap is too close, return false
       if((Math.abs(p[0] - positions[i][0]) < 0.5*bcr) &&
        (Math.abs(p[1] - positions[i][1]) < 0.5*bcr)){
-         console.log('too close m8');
+         // console.log('too close m8');
          return false;
        }
 
@@ -358,7 +385,6 @@ function getOverlapDistribution(num, desiredOverlap) {
   // get [anchorPositions] random locations in the display
   // for(var i = 0; i < anchorPositions; i++) {
     positions.push(placeAnchor());
-    console.log(positions);
   // }
 
   // add [num - anchorPositions] locations overlapping at least one current location.
@@ -430,8 +456,18 @@ document.addEventListener('keypress', (event) => {
       // drawSymbols(threeLine);
       break;
     case "c":
-      computeOverlaps(getPositions());
-      computeOverlapPercentage(getPositions());
+      if(mode == 1) {
+        computeOverlaps(getPositions());
+        computeOverlapPercentage(getPositions());
+      } else {
+        console.log('left display:');
+        computeOverlaps(getPositions(1));
+        computeOverlapPercentage(getPositions(1));
+
+        console.log('right display:');
+        computeOverlaps(getPositions(2));
+        computeOverlapPercentage(getPositions(2));
+      }
       break;
     case "v":
       toggleLayout();
@@ -441,17 +477,29 @@ document.addEventListener('keypress', (event) => {
       break;
     case "n":
       if(mode == 1) {
-        drawNumerosityTogether(getOverlapDistribution(numShapes + numShapes2), symbol1, numShapes, symbol2, numShapes2);
+        do {
+          console.log("Single-display numerosity...");
+          drawNumerosityTogether(getOverlapDistribution(numShapes + numShapes2, desiredOverlapPercentage-0.2), symbol1, numShapes, symbol2, numShapes2);
+        } while (Math.abs(computeOverlapPercentage(getPositions()) - desiredOverlapPercentage) > 0.05 );
 
-        computeOverlaps(getPositions());
-        computeOverlapPercentage(getPositions());
+        // computeOverlaps(getPositions());
+        console.log(computeOverlapPercentage(getPositions()) + "%");
+
       } else {
-        drawNumerositySeparately(symbol1, numShapes, symbol2, numShapes2);
+        do {
+          console.log("Double-display numerosity...");
+          drawNumerositySeparately(getOverlapDistribution(numShapes, desiredOverlapPercentage-0.2), symbol1, numShapes, getOverlapDistribution(numShapes2, desiredOverlapPercentage2-0.2), symbol2, numShapes2);
 
-        console.log("NOW DO IT");
+        } while ((Math.abs(computeOverlapPercentage(getPositions()) - desiredOverlapPercentage) > 0.05) || (Math.abs(computeOverlapPercentage(getPositions(2)) - desiredOverlapPercentage2) > 0.05) );
+
+        console.log('left display:');
+        // computeOverlaps(getPositions(1));
+        console.log(computeOverlapPercentage(getPositions(1)) + "%");
+
+        console.log('right display:');
+        // computeOverlaps(getPositions(2));
+        console.log(computeOverlapPercentage(getPositions(2)) + "%");
       }
-
-
       break;
     case "s":
       toggleShape();
