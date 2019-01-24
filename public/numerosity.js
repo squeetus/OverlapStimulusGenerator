@@ -9,8 +9,8 @@ var width = 500,
     center = [width/2, height/2];
 
 // number of shapes in categories 1 and 2
-var numShapes = 50;
-var numShapes2 = 50;
+var numShapes = 10;
+var numShapes2 = 20;
 
 var currSymbol = 1, symbol1 = dot, symbol2 = dot;
 
@@ -22,21 +22,21 @@ var mode = 1;
  * option 3 - correlated (linear trend)
  * option 4 - specific overlap
  */
-var whichDistribution = 3;
+var whichDistribution = 4;
 
 // which positions/shapes/svg are we modifying? 1 or 2
 var which = 1;
 
 // gaussian distribution
-var mean = width/2, variance = 4500;
+var mean = width/2, variance = 4000;
 
 // correlation for linear trend task
-var correlation = 0.8; // easy, medium, hard?
+var correlation = 0.6; // easy, medium, hard?
 
 
 // radius of bounding circle in pixels
-// bcr = 8 yields 0.4043 degrees visual angle for diameter of bounding circle
-var bcr = 8;
+//  bcr = 12 assumes a visual angle of ~0.5 degrees for each symbol (????)
+var bcr = 6;
 
 // the rotation of svg 1 and 2
 var svgRotation = 0;
@@ -230,10 +230,10 @@ function getRandomDistribution() {
   return positions;
 }
 
-function getSpecificOverlapDistribution(num, anchorPositions) {
-  if(!num) num = (which == 1) ? numShapes : numShapes2;
+function getSpecificOverlapDistribution() {
+  var num = (which == 1) ? numShapes : numShapes2;
   var positions = [];
-  if(!anchorPositions) anchorPositions = num/4;
+  var anchorPositions = 50;
   var x, y;
 
   // randomly pick an anchor position
@@ -377,13 +377,7 @@ document.addEventListener('keypress', (event) => {
       toggleWhich();
       break;
     case "n":
-      drawNumerosity(getSpecificOverlapDistribution(numShapes + numShapes2), symbol1, numShapes, symbol2, numShapes2);
-      computeOverlaps(getPositions());
-      break;
-    case "m":
-      // drawNumerosity(getSpecificOverlapDistribution(numShapes + numShapes2), symbol1, numShapes, symbol2, numShapes2);
-      drawLinear(getCorrelatedDistribution(), getGaussianDistribution(), symbol1, symbol2);
-      computeOverlaps(getPositions());
+      drawNumerosity(symbol1, numShapes, symbol2, numShapes2);
       break;
     case "s":
       toggleShape();
@@ -416,8 +410,7 @@ function getPositions() {
   let s = (which == 1) ? shapes : shapes2;
 
   var positions = [];
-  // s.each(function(d) {
-  d3.selectAll(".shapecontainer").each(function(d) {
+  s.each(function(d) {
     translate = d3.select(this).attr("transform");
     pos = translate.substring(translate.indexOf("(")+1, translate.indexOf(")")).split(",");
     pos[0] = +pos[0];
@@ -505,7 +498,6 @@ function rotateSVG() {
 
 // brute force n^2 approach
 function computeOverlaps(positions) {
-  // console.log(positions);
   var counts = [];
   var countByShape = {
     "first": [],
