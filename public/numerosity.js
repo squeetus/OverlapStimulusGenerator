@@ -9,41 +9,25 @@ var width = 500,
     center = [width/2, height/2];
 
 // number of shapes in categories 1 and 2
-var numShapes = 10;
-var numShapes2 = 20;
+var numShapes = 20;
+var numShapes2 = 80;
 
 var currSymbol = 1, symbol1 = dot, symbol2 = dot;
 
 // in mode 1, we have one svg. in mode 2, we have two svgs.
 var mode = 1;
 
-/* option 1 - gaussian
- * option 2 - random
- * option 3 - correlated (linear trend)
- * option 4 - specific overlap
- */
-var whichDistribution = 4;
-
 // which positions/shapes/svg are we modifying? 1 or 2
 var which = 1;
 
-// gaussian distribution
-var mean = width/2, variance = 4000;
-
-// correlation for linear trend task
-var correlation = 0.6; // easy, medium, hard?
-
-
 // radius of bounding circle in pixels
-//  bcr = 12 assumes a visual angle of ~0.5 degrees for each symbol (????)
-var bcr = 6;
+// bcr = 8 yields 0.4043 degrees visual angle for diameter of bounding circle
+var bcr = 8;
 
 // the rotation of svg 1 and 2
 var svgRotation = 0;
 var svgRotation2 = 0;
 
-// flag for printing helpful circles and stuff
-var pretty = false;
 
 // canvas area 1
 var svg = d3.select("#display")
@@ -88,6 +72,7 @@ function toggleWhich() {
   flashBorder();
 }
 
+
 function toggleShape() {
   currSymbol = (currSymbol == 1) ? 2 : 1;
 
@@ -95,10 +80,16 @@ function toggleShape() {
 }
 
 function modifySymbol(s) {
-  if(currSymbol == 1)
+  if(currSymbol == 1) {
     symbol1 = s;
-  else if(currSymbol == 2)
+  } else if(currSymbol == 2) {
     symbol2 = s;
+  }
+  redrawSymbols();
+}
+
+function redrawSymbols() {
+  drawNumerosityTogether(getPositions(), symbol1, numShapes, symbol2, numShapes2);
 }
 
 // set of shape positions
@@ -107,153 +98,171 @@ shapes = svg.selectAll(".shape");
 
 shapes2 = svg2.selectAll(".shape");
 
-// remove all shapes in the svg areas and resample both
-function reset() {
-  let sv = (which == 1) ? svg : svg2;
 
-  sv.selectAll("*").remove();
-  resample();
-}
 
-// resample the distribution of shape positions
-function resample() {
-  let s = (which == 1) ? shapes : shapes2;
-  let sv = (which == 1) ? svg : svg2;
-  let rotate = (which == 1) ? svgRotation : svgRotation2;
-  let ns = (which == 1) ? numShapes : numShapes2;
 
-  let positions;
 
-  if(whichDistribution == 1) {
-    positions = getGaussianDistribution();
-  } else if(whichDistribution == 2) {
-    positions = getRandomDistribution();
-  } else if(whichDistribution == 3) {
-    positions = getCorrelatedDistribution();
-  } else if(whichDistribution == 4) {
-    positions = getSpecificOverlapDistribution();
-  }
+function drawNumerosityTogether(positions, symbol, count, symbol2, count2) {
+  // get 100 positions with a specific amount of overlap among symbols
+  // var positions = getOverlapDistribution(count + count2);
 
+  // let s = (which == 1) ? shapes : shapes2;
+  let sv = svg;
+  let rotate = svgRotation;
+
+  // keep track of how many of each type have been drawn
+  let drawn = 0, drawn2 = 0;
+
+  sv.selectAll(".shapecontainer").remove();
   s = sv.selectAll(".shape")
-          .data([...Array(ns).keys()])
+          .data([...Array(positions.length).keys()])
           .enter().append("g")
             .classed("shapecontainer", true)
             .attr('transform', function(d, i) {
               return 'translate(' +  positions[i][0] + ',' +
               positions[i][1] + ') rotate(' + (-rotate)  + ' 0 0)';
             });
+  s.append("path")
+    // .attr("class", function(d, i) {
+    //   if(mode == 1) {
+    //     return i % 2 === 0 ? getName(symbol) : getName(symbol2);
+    //   }
+    //   else return getName(symbol);
+    // })
+    .classed("shape", true)
+    .attr("id", function(d, i) { return i; })
+    .attr("d", function(d, i) {
+      if(i % 2 == 0) { // even positions are symbol1
+        if(drawn < count) {
+          drawn++;
+          return symbol();
+        } else {
+          return symbol2();
+        }
+      } else {
+        if(drawn2 < count2) {
+          drawn2++;
+          return symbol2();
+        } else {
+          return symbol();
+        }
+      }
+    })
+    .style("stroke", "black")
+    .style("fill", "none")
+    .style("fill-opacity", 1)
+    .style("opacity", 1);
 
-  // make sure original shape variables are exposed
-  if(which == 1)
-    shapes = s;
-  if(which == 2)
-    shapes2 = s;
+  sv.selectAll(".shapecontainer")
+    .attr("transform", function(d,i) {
+      var myXform = d3.select(this).attr("transform");
+      return myXform.slice(0, myXform.indexOf("rotate")) + ' rotate(' + (-rotate)  + ' 0 0)';
+    });
 }
 
-// get a gaussian distribution of x and y positions
-function getGaussianDistribution() {
-  var num = (which == 1) ? numShapes : numShapes2;
-  var positions = [];
-  var x, y;
 
-  distribution = gaussian(mean, variance);
 
-  for(var i = 0; i < num; i++) {
-    x = distribution.ppf(Math.random());
-    y = distribution.ppf(Math.random());
-    positions.push([x,y]);
-  }
-  return positions;
+
+
+
+
+function drawNumerositySeparately(positions, symbol, count, symbol2, count2) {
+  // let s = (which == 1) ? shapes : shapes2;
+  let sv = (which == 1) ? svg : svg2;
+  let rotate = (which == 1) ? svgRotation : svgRotation2;
+
+  // keep track of how many of each type have been drawn
+  let drawn = 0, drawn2 = 0;
+
+  sv.selectAll(".shapecontainer").remove();
+  s = sv.selectAll(".shape")
+          .data([...Array(positions.length).keys()])
+          .enter().append("g")
+            .classed("shapecontainer", true)
+            .attr('transform', function(d, i) {
+              return 'translate(' +  positions[i][0] + ',' +
+              positions[i][1] + ') rotate(' + (-rotate)  + ' 0 0)';
+            });
+  s.append("path")
+    // .attr("class", function(d, i) {
+    //   if(mode == 1) {
+    //     return i % 2 === 0 ? getName(symbol) : getName(symbol2);
+    //   }
+    //   else return getName(symbol);
+    // })
+    .classed("shape", true)
+    .attr("id", function(d, i) { return i; })
+    .attr("d", function(d, i) {
+      if(i % 2 == 0) { // even positions are symbol1
+        if(drawn < count) {
+          drawn++;
+          return symbol();
+        } else {
+          return symbol2();
+        }
+      } else {
+        if(drawn2 < count2) {
+          drawn2++;
+          return symbol2();
+        } else {
+          return symbol();
+        }
+      }
+    })
+    .style("stroke", "black")
+    .style("fill", "none")
+    .style("fill-opacity", 1)
+    .style("opacity", 1);
+
+  sv.selectAll(".shapecontainer")
+    .attr("transform", function(d,i) {
+      var myXform = d3.select(this).attr("transform");
+      return myXform.slice(0, myXform.indexOf("rotate")) + ' rotate(' + (-rotate)  + ' 0 0)';
+    });
 }
 
-function getCorrelatedDistribution() {
-  var num = (which == 1) ? numShapes : numShapes2;
+
+
+
+
+
+
+/*
+  Produce a set of positions with a specific amount of overlap:
+  easy - 30%
+  medium - 50%
+  hard - 70%
+*/
+function getOverlapDistribution(num, desiredOverlap) {
+  // if(!num) num = (which == 1) ? numShapes : numShapes2;
   var positions = [];
+  // var anchorPositions = num/4;
   var x, y;
+  if(!desiredOverlap) desiredOverlap = 0.2;
+  var overlapThreshold = 4; // max number of overlaps for a new overlapping position
 
-  distribution = gaussian(mean, variance);
-  // get a gaussian distribution of x and y positions
-  positions = getGaussianDistribution();
-
-  // // transform each y to y'
-  var l = lambda(correlation);
-  for(i = 0; i < num; i++) {
-    x = positions[i][0];
-    y = positions[i][1];
-    positions[i][1] = (((l*x) + ((1-l)*y))/(Math.sqrt((l*l) + ((1-l)*(1-l)))));
-  }
-
-  // if any point is > 2.5 stddev from mean, remove it and generate a new point
-
-
-
-  // adjust points?
-
-  // rescale?
-
-  // recenter
-  var thisCenter = averagePosition(positions);
-  var deltas = [
-    thisCenter[0] - center[0],
-    thisCenter[1] - center[1]
+  // bounds of possible x and y coordinates (given width, height, and bcr)
+  xRange = [
+    (2*bcr) + 0.1*width,
+    width-2*bcr - 0.1*width
   ];
-
-  for(i = 0; i < num; i++) {
-    positions[i][0] -= deltas[0];
-    positions[i][1] -= deltas[1];
-  }
-
-  return positions;
-}
-// lambda function used in the transformation of y' positions.
-// r is the desired correlation.
-function lambda(r) {
-  return (((r*r)-Math.sqrt((r*r)-(r*r*r*r)))/((2*r*r)-1));
-}
-
-
-
-function getRandomDistribution() {
-  var num = (which == 1) ? numShapes : numShapes2;
-  var positions = [];
-  var x, y;
-
-  for(var i = 0; i < num; i++) {
-    // x = ((Math.random() * ((width-2*bcr)-2*bcr)) + 2*bcr).toFixed(3);
-    // y = ((Math.random() * ((height-2*bcr)-2*bcr)) + 2*bcr).toFixed(3);
-    x = randomFromInterval(2*bcr, width-2*bcr, 3);
-    x = randomFromInterval(2*bcr, height-2*bcr, 3);
-
-    positions.push([x,y]);
-  }
-
-  return positions;
-}
-
-function getSpecificOverlapDistribution() {
-  var num = (which == 1) ? numShapes : numShapes2;
-  var positions = [];
-  var anchorPositions = 50;
-  var x, y;
+  yRange = [
+    2*bcr + 0.1*height,
+    height-2*bcr - 0.1*height
+  ];
 
   // randomly pick an anchor position
   function pickAnchor() {
-    return positions[Math.floor(Math.random()*anchorPositions)];
+    // return positions[Math.floor(Math.random()*anchorPositions)];
+    return positions[Math.floor(Math.random()*positions.length)];
   }
 
   function placeAnchor() {
-    xRange = [
-      (2*bcr) + 0.1*width,
-      width-2*bcr - 0.1*width
-    ];
-    yRange = [
-      2*bcr + 0.1*height,
-      height-2*bcr - 0.1*height
-    ];
+
     x = randomFromInterval(xRange[0], xRange[1], 3);
     y = randomFromInterval(yRange[0], yRange[1], 3);
 
-    while(!validPoint([x, y])) {
+    while(!validAnchor([x, y])) {
       x = randomFromInterval(xRange[0], xRange[1], 3);
       y = randomFromInterval(yRange[0], yRange[1], 3);
     }
@@ -261,61 +270,121 @@ function getSpecificOverlapDistribution() {
     return [x,y];
   }
 
-  // determine whether a given point [x, y] is valid given the constraints
-  //   of the specific overlap desired and the bounds of the display
-  function validPoint(p) {
+  function placeOverlapper() {
+      do {
+        // pick an existing position to draw next to
+        anchor = pickAnchor();
 
+        // offsetx = randomFromInterval(anchor[0]-1.8*bcr, anchor[0] + 1.8*bcr);
+        // offsety = randomFromInterval(anchor[1]-1.8*bcr, anchor[1] + 1.8*bcr);
+
+        // pick an angle around the chosen anchor
+        theta = randomFromInterval(0, 2*Math.PI);
+
+        // pick a distance from the anchor (not too close or far)
+        d = randomFromInterval(0.2*bcr*2, 0.8*bcr*2);
+
+        // determine new coordinates from angle and distance
+        dx = d * Math.cos(theta);
+        dy = d * Math.sin(theta);
+
+        x = anchor[0] + dx;
+        y = anchor[1] + dy;
+
+      } while(!validOverlapPoint([x, y]));
+
+      return [x,y];
+  }
+
+  // is the point p([x, y]) in screen bounds?
+  function inBounds(p) {
     // check bounds of display
     if((p[0]-2*bcr) <= 0 ||
       (p[0]+2*bcr) >= width ||
       (p[1]-2*bcr) <= 0 ||
       (p[1]+2*bcr) >= height) {
-      // console.log("out of bounds.");
+      console.log("out of bounds.");
       return false;
     }
-
-    // check overlap with other symbols
-    for(var i = 0; i < positions.length; i++) {
-      if((Math.abs(p[0] - positions[i][0]) < 0.5*bcr) &&
-       (Math.abs(p[1] - positions[i][1]) < 0.5*bcr)){
-      // if((Math.abs(p[0] - positions[i][0]) < bcr) &&
-      //  (Math.abs(p[1] - positions[i][1]) < bcr)){
-         // console.log("TOOOO CLOSE", distance(positions[i], p));
-        return false;
-      }
-    }
-
     return true;
   }
 
-  // get [anchorPositions] random locations in the display
-  // this can still produce overlaps!
-  for(var i = 0; i < anchorPositions; i++) {
-    positions.push(placeAnchor());
+  // does the point p([x, y]) overlap any other positions?
+  function hasOverlap(p) {
+    for(var i = 0; i < positions.length; i++) {
+      // console.log(p, positions[i]);
+      if((Math.abs(p[0] - positions[i][0]) < 2*bcr) &&
+       (Math.abs(p[1] - positions[i][1]) < 2*bcr)){
+         // console.log("TOOOO CLOSE", distance(positions[i], p));
+        return true;
+      }
+    }
   }
 
-  // do something about overlaps among anchor positions?
+  // anchor positions must be within bounds and must not overlap
+  function validAnchor(p) {
+    return inBounds(p) && !hasOverlap(p);
+  }
+
+  // determine whether a given point [x, y] is valid given the constraints
+  //   of the specific overlap desired and the bounds of the display
+  function validOverlapPoint(p) {
+
+    if(!inBounds(p)) return false;
+
+    // count any overlap with other symbols
+    var overlaps = 0;
+    for(var i = 0; i < positions.length; i++) {
+      // if the overlap is too close, return false
+      if((Math.abs(p[0] - positions[i][0]) < 0.5*bcr) &&
+       (Math.abs(p[1] - positions[i][1]) < 0.5*bcr)){
+         console.log('too close m8');
+         return false;
+       }
+
+      // otherwise, count the number of overlaps
+      if((Math.abs(p[0] - positions[i][0]) < 2*bcr) &&
+       (Math.abs(p[1] - positions[i][1]) < 2*bcr)){
+
+        overlaps++;
+      }
+    }
+
+    return (overlaps < overlapThreshold);
+
+    //return true;
+  }
+
+  // get [anchorPositions] random locations in the display
+  // for(var i = 0; i < anchorPositions; i++) {
+    positions.push(placeAnchor());
+    console.log(positions);
+  // }
 
   // add [num - anchorPositions] locations overlapping at least one current location.
-  for(var j = 0; j < (num-anchorPositions); j++) {
-    do {
-      anchor = pickAnchor();
-      // offsetx = randomFromInterval(anchor[0]-1.8*bcr, anchor[0] + 1.8*bcr);
-      // offsety = randomFromInterval(anchor[1]-1.8*bcr, anchor[1] + 1.8*bcr);
-      theta = randomFromInterval(0, 2*Math.PI);
-      d = randomFromInterval(0.2*bcr*2, 0.8*bcr*2);
-      dx = d * Math.cos(theta);
-      dy = d * Math.sin(theta);
+  // for(var j = 0; j < (num-anchorPositions); j++) {
+  for(var j = 0; j < (num-1); j++) {
 
-      x = anchor[0] + dx;
-      y = anchor[1] + dy;
-    } while(!validPoint([x, y]));
-
-    positions.push([x,y]);
+    // randomly place next position with or without overlap
+    if(Math.random() < desiredOverlap) {
+      //  overlap:
+      // console.log('overlap');
+      positions.push(placeOverlapper());
+    } else {
+      // no overlap
+      // console.log('no overlap');
+      positions.push(placeAnchor()); // anchor positions can not overlap
+    }
   }
 
   return positions;
 }
+
+
+
+
+
+
 
 
 
@@ -360,15 +429,9 @@ document.addEventListener('keypress', (event) => {
       modifySymbol(threeLine);
       // drawSymbols(threeLine);
       break;
-    case "d":
-      drawSymbols(symbol1, symbol2);
-      computeOverlaps(getPositions());
-      break;
-    case "r":
-      reset();
-      break;
     case "c":
       computeOverlaps(getPositions());
+      computeOverlapPercentage(getPositions());
       break;
     case "v":
       toggleLayout();
@@ -377,7 +440,18 @@ document.addEventListener('keypress', (event) => {
       toggleWhich();
       break;
     case "n":
-      drawNumerosity(symbol1, numShapes, symbol2, numShapes2);
+      if(mode == 1) {
+        drawNumerosityTogether(getOverlapDistribution(numShapes + numShapes2), symbol1, numShapes, symbol2, numShapes2);
+
+        computeOverlaps(getPositions());
+        computeOverlapPercentage(getPositions());
+      } else {
+        drawNumerositySeparately(symbol1, numShapes, symbol2, numShapes2);
+
+        console.log("NOW DO IT");
+      }
+
+
       break;
     case "s":
       toggleShape();
@@ -392,177 +466,3 @@ document.addEventListener('keypress', (event) => {
 
   // console.log('keypress event\n\n' + 'key: ' + keyName);
 });
-
-
-/*
- *
- *    Helper Functions
- *
- */
-
-// compute radians from degrees
-function degToRad(deg) {
-  return deg*0.01745329252;
-}
-
-// computes and returns an array of [x,y] positions for all shapes
-function getPositions() {
-  let s = (which == 1) ? shapes : shapes2;
-
-  var positions = [];
-  s.each(function(d) {
-    translate = d3.select(this).attr("transform");
-    pos = translate.substring(translate.indexOf("(")+1, translate.indexOf(")")).split(",");
-    pos[0] = +pos[0];
-    pos[1] = +pos[1];
-    positions.push(pos);
-  });
-  return positions;
-}
-
-// send all the current positions to the server to save
-function sendPositions() {
-  var data = {};
-  var tmp = which;
-
-  // associate the points with an id or set of conditions
-  //data.id = condition+...+structure(etc)
-
-  which = 1;
-  data.pos1 = getPositions();
-  which = 2;
-  data.pos2 = getPositions();
-  which = tmp;
-
-  POST(data, function(r) {
-    console.log(r.status);
-  });
-}
-
-// compute the average position of an array of [x,y] points
-function averagePosition(positions) {
-  avgPos = [0,0];
-  for(var i = 0; i < positions.length; i++) {
-    avgPos[0]+=positions[i][0];
-    avgPos[1]+=positions[i][1];
-  }
-  return([avgPos[0]/positions.length,avgPos[1]/positions.length]);
-}
-
-// compute the sum of an array of numbers
-function sum(nums) {
-  var sum = 0;
-  for(var i = 0; i < nums.length; i++) {
-    sum += nums[i];
-  }
-  return sum;
-}
-
-// compute the average of an array of numbers
-function average(nums) {
-  var avg = 0;
-  for(var i = 0; i < nums.length; i++) {
-    avg += nums[i];
-  }
-  return avg/nums.length;
-}
-
-// compute the stddev of an array of numbers
-function stddev(nums) {
-  var mean = average(nums);
-  var sumSquareDiff = 0;
-  for(var i = 0; i < nums.length; i++) {
-    sumSquareDiff += (nums[i] - mean)*(nums[i] - mean);
-  }
-  return Math.sqrt(sumSquareDiff/nums.length);
-}
-
-// rotate the svg by increments of 90 degrees. (note that shapes should stay the same way up)
-function rotateSVG() {
-  let sv = (which == 1) ? svg : svg2;
-  let rotate = (which == 1) ? svgRotation : svgRotation2;
-
-  sv.attr('transform', 'rotate(' + (rotate+=90)  + ' 0 0)');
-  sv.selectAll(".shapecontainer")
-    .attr("transform", function(d,i) {
-      var myXform = d3.select(this).attr("transform");
-      return myXform.slice(0, myXform.indexOf("rotate")) + ' rotate(' + (-rotate)  + ' 0 0)';
-    });
-
-  // make sure original rotation variables are exposed
-  if(which == 1)
-    svgRotation = rotate;
-  if(which == 2)
-    svgRotation2 = rotate;
-}
-
-// brute force n^2 approach
-function computeOverlaps(positions) {
-  var counts = [];
-  var countByShape = {
-    "first": [],
-    "second": []
-  };
-  var px = 0, py = 0;
-
-  // for each position, find number in (bounding circle radius bcr) around point
-  for(var i = 0; i < positions.length; i++) {
-    px = positions[i][0];
-    py = positions[i][1];
-    counts.push( searchAll(positions, px, py, bcr).length );
-  }
-
-  console.log(sum(counts), average(counts), stddev(counts));
-}
-
-// Find the symbols within the specified circle (brute force)
-function searchAll(p, cx, cy, radius) {
-  if(pretty) {
-    thiscirc = svg.append('g');
-    thiscirc.append('circle')
-      .attrs({ cx: cx, cy: cy, r:radius , fill: 'none', stroke:'blue' });
-  }
-
-  var contains = [];
-
-  for(var i = 0; i < p.length; i++) {
-    var d = p[i]; // d is current considered point
-    if(d[0] == cx && d[1] == cy) continue; // self
-
-    if(pretty) {
-      thiscirc = svg.append('g');
-      thiscirc.append('circle').attrs({ cx: d[0], cy: d[1], r:radius , fill: 'none'});
-      thiscirc.attr('stroke','purple');
-    }
-
-    if(inCircle(d[0], d[1], cx, cy, radius)) {
-      if(pretty) thiscirc.attr('stroke','green');
-
-      contains.push(d);
-    } else if(pretty) {
-      thiscirc.attrs({stroke:'red','stroke-dasharray':'3'});
-    }
-  }
-
-  return contains;
-}
-
-/*
- *  return true if the given coordinates are within (radius) distance
- *    of the point defined by cx, cy
- */
-function inCircle(x, y, cx, cy, radius) {
-  return ((x) - cx) * ((x) - cx) + ((y) - cy) * ((y)- cy) < 4*radius * radius;
-}
-
-/*
- *  return a random number between the given min and max values
- *    with the specified precision
- */
-function randomFromInterval(min, max, decimels) {
-    return +(Math.random()*(max-min)+min).toFixed(decimels || 3);
-}
-
-function distance(p1, p2) {
-  return Math.sqrt(Math.pow((p1[0] - p2[0]), 2) + Math.pow((p1[1] - p2[1]), 2));
-}
