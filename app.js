@@ -20,6 +20,9 @@ app.get('/', (req, res) => res.sendFile(__dirname + '/public/stimulus.html'));
 
 app.get('/numerosity', (req, res) => res.sendFile(__dirname + '/public/numerosity.html'));
 
+app.get('/linear', (req, res) => res.sendFile(__dirname + '/public/linear.html'));
+
+
 app.post('/uploadData', (req, res) => {
   fs.writeFile('./out/p' + ++positionDataCount, JSON.stringify(req.body), (err) => {
       if (err) throw err;
