@@ -1,3 +1,10 @@
+// gaussian distribution
+var mean = width/2, variance = 6000;
+
+numShapes = numShapes2 = 50;
+
+// correlation for linear trend task
+var correlation = 0.7; // easy, medium, hard?
 
 function redrawSymbols() {
   if(mode == 1) {
@@ -7,10 +14,181 @@ function redrawSymbols() {
   }
 }
 
-function drawLinearTogether(positions, symbol, count, symbol2, count2) {
+function drawLinearTogether(correlatedPositions, symbol, gaussianPositions, symbol2) {
 
+  let sv = svg;
+  let rotate = svgRotation;
+
+  // produce a master positions list
+  // assume a and b are the same number
+  function splicePositions(a, b) {
+    var c = [];
+    // loop through each
+    for(var i = 0; i < numShapes; i++) {
+      c.push(a[i]);
+      c.push(b[i]);
+    }
+    return c;
+  }
+
+  var positions = splicePositions(correlatedPositions, gaussianPositions);
+
+  // draw linear
+  sv.selectAll(".shapecontainer").remove();
+  s = sv.selectAll(".shape1")
+          .data([...Array(positions.length).keys()])
+          .enter().append("g")
+            .classed("shapecontainer", true)
+            .attr('transform', function(d, i) {
+              return 'translate(' +  positions[i][0] + ',' +
+              positions[i][1] + ') rotate(' + (-rotate)  + ' 0 0)';
+            });
+  s.append("path")
+    .classed("shape1", true)
+    .attr("id", function(d, i) { return i; })
+    .attr("d", function(d, i) {
+      if(i % 2 === 0) {
+        return symbol();
+      } else {
+        return symbol2();
+      }
+    })
+    .style("stroke", "black")
+    .style("fill", "none")
+    .style("fill-opacity", 1)
+    .style("opacity", 1);
+
+  sv.selectAll(".shapecontainer")
+    .attr("transform", function(d,i) {
+      var myXform = d3.select(this).attr("transform");
+      return myXform.slice(0, myXform.indexOf("rotate")) + ' rotate(' + (-rotate)  + ' 0 0)';
+    });
 }
+
+function drawLinear(correlatedPositions, gaussianPositions, symbol1, symbol2) {
+  let sv = (which == 1) ? svg : svg2;
+  let rotate = (which == 1) ? svgRotation : svgRotation2;
+
+
+
+  // draw linear
+  s = sv.selectAll(".shape1")
+          .data([...Array(correlatedPositions.length).keys()])
+          .enter().append("g")
+            .classed("shapecontainer", true)
+            .attr('transform', function(d, i) {
+              return 'translate(' +  correlatedPositions[i][0] + ',' +
+              correlatedPositions[i][1] + ') rotate(' + (-rotate)  + ' 0 0)';
+            });
+  s.append("path")
+    .classed("shape1", true)
+    .attr("id", function(d, i) { return i; })
+    .attr("d", symbol1())
+    .style("stroke", "black")
+    .style("fill", "none")
+    .style("fill-opacity", 1)
+    .style("opacity", 1);
+
+  sv.selectAll(".shapecontainer")
+    .attr("transform", function(d,i) {
+      var myXform = d3.select(this).attr("transform");
+      return myXform.slice(0, myXform.indexOf("rotate")) + ' rotate(' + (-rotate)  + ' 0 0)';
+    });
+
+  // draw gaussian
+  if(mode == 2) {
+    sv = svg2;
+    sv.selectAll(".shapecontainer").remove();
+  }
+  s = sv.selectAll(".shape2")
+          .data([...Array(gaussianPositions.length).keys()])
+          .enter().append("g")
+            .classed("shapecontainer", true)
+            .attr('transform', function(d, i) {
+              return 'translate(' +  gaussianPositions[i][0] + ',' +
+              gaussianPositions[i][1] + ') rotate(' + (-rotate)  + ' 0 0)';
+            });
+  s.append("path")
+    .classed("shape2", true)
+    .attr("id", function(d, i) { return i; })
+    .attr("d", symbol2())
+    .style("stroke", "black")
+    .style("fill", "none")
+    .style("fill-opacity", 1)
+    .style("opacity", 1);
+
+  sv.selectAll(".shapecontainer")
+    .attr("transform", function(d,i) {
+      var myXform = d3.select(this).attr("transform");
+      return myXform.slice(0, myXform.indexOf("rotate")) + ' rotate(' + (-rotate)  + ' 0 0)';
+    });
+}
+
 
 function drawLinearSeparately(positions, symbol, count, positions2, symbol2, count2) {
 
+}
+
+
+
+function getGaussianDistribution(num) {
+  // var num = (which == 1) ? numShapes : numShapes2;
+  var positions = [];
+  var x, y;
+
+  distribution = gaussian(mean, variance);
+
+  for(var i = 0; i < num; i++) {
+    do{
+      x = distribution.ppf(Math.random());
+      y = distribution.ppf(Math.random());
+    } while(!validOverlapPoint([x, y], positions));
+
+    positions.push([x,y]);
+  }
+  return positions;
+}
+
+function getCorrelatedDistribution(num) {
+  // var num = (which == 1) ? numShapes : numShapes2;
+  var positions = [];
+  var x, y;
+
+  distribution = gaussian(mean, variance);
+  // get a gaussian distribution of x and y positions
+  positions = getGaussianDistribution(num);
+
+  // // transform each y to y'
+  var l = lambda(correlation);
+  for(i = 0; i < num; i++) {
+    x = positions[i][0];
+    y = positions[i][1];
+    positions[i][1] = (((l*x) + ((1-l)*y))/(Math.sqrt((l*l) + ((1-l)*(1-l)))));
+  }
+
+  // if any point is > 2.5 stddev from mean, remove it and generate a new point
+
+  // adjust points?
+
+  // rescale?
+
+  // recenter
+  var thisCenter = averagePosition(positions);
+  var deltas = [
+    thisCenter[0] - center[0],
+    thisCenter[1] - center[1]
+  ];
+
+  for(i = 0; i < num; i++) {
+    positions[i][0] -= deltas[0];
+    positions[i][1] -= deltas[1];
+  }
+
+  return positions;
+}
+
+// lambda function used in the transformation of y' positions.
+// r is the desired correlation.
+function lambda(r) {
+  return (((r*r)-Math.sqrt((r*r)-(r*r*r*r)))/((2*r*r)-1));
 }

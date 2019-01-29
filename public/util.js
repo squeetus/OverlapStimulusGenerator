@@ -191,3 +191,41 @@ function randomFromInterval(min, max, decimels) {
 function distance(p1, p2) {
   return Math.sqrt(Math.pow((p1[0] - p2[0]), 2) + Math.pow((p1[1] - p2[1]), 2));
 }
+
+// is the point p([x, y]) in screen bounds?
+function inBounds(p) {
+  // check bounds of display
+  if((p[0]-2*bcr) <= width * 0.1 || //left
+    (p[0]+2*bcr) >= width - (width * 0.1) || //right
+    (p[1]-2*bcr) <= height * 0.1 ||
+    (p[1]+2*bcr) >= height - (height * 0.1)) {
+    console.log("out of bounds.");
+    return false;
+  }
+  return true;
+}
+
+function validOverlapPoint(p, positions) {
+
+  if(!inBounds(p)) return false;
+
+  // count any overlap with other symbols
+  var overlaps = 0;
+  for(var i = 0; i < positions.length; i++) {
+    // if the overlap is too close, return false
+    if((Math.abs(p[0] - positions[i][0]) < 0.5*bcr) &&
+     (Math.abs(p[1] - positions[i][1]) < 0.5*bcr)){
+       // console.log('too close m8');
+       return false;
+     }
+
+    // otherwise, count the number of overlaps
+    if((Math.abs(p[0] - positions[i][0]) < 2*bcr) &&
+     (Math.abs(p[1] - positions[i][1]) < 2*bcr)){
+
+      overlaps++;
+    }
+  }
+
+  return (overlaps < overlapThreshold);
+}

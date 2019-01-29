@@ -17,6 +17,8 @@ var numShapes2 = 63;
 var desiredOverlapPercentage = 0.3;
 var desiredOverlapPercentage2 = 0.7;
 
+var overlapThreshold = 4; // max number of overlaps for a new overlapping position
+
 var currSymbol = 1, symbol1 = dot, symbol2 = dot;
 
 // in mode 1, we have one svg. in mode 2, we have two svgs.
@@ -32,7 +34,6 @@ var bcr = 8;
 // the rotation of svg 1 and 2
 var svgRotation = 0;
 var svgRotation2 = 0;
-
 
 // canvas area 1
 var svg = d3.select("#display")
@@ -168,14 +169,14 @@ document.addEventListener('keypress', (event) => {
         } while (Math.abs(computeOverlapPercentage(getPositions()) - desiredOverlapPercentage) > 0.05 );
 
         // computeOverlaps(getPositions());
-        console.log(computeOverlapPercentage(getPositions()) + "%");
+        console.log(computeOverlapPercentage(getPositions(1)) + "%");
 
       } else {
         do {
           console.log("Double-display numerosity...");
           drawNumerositySeparately(getOverlapDistribution(numShapes, desiredOverlapPercentage-0.2), symbol1, numShapes, getOverlapDistribution(numShapes2, desiredOverlapPercentage2-0.2), symbol2, numShapes2);
 
-        } while ((Math.abs(computeOverlapPercentage(getPositions()) - desiredOverlapPercentage) > 0.05) || (Math.abs(computeOverlapPercentage(getPositions(2)) - desiredOverlapPercentage2) > 0.05) );
+        } while ((Math.abs(computeOverlapPercentage(getPositions(1)) - desiredOverlapPercentage) > 0.05) || (Math.abs(computeOverlapPercentage(getPositions(2)) - desiredOverlapPercentage2) > 0.05) );
 
         console.log('left display:');
         // computeOverlaps(getPositions(1));
@@ -184,6 +185,19 @@ document.addEventListener('keypress', (event) => {
         console.log('right display:');
         // computeOverlaps(getPositions(2));
         console.log(computeOverlapPercentage(getPositions(2)) + "%");
+      }
+      break;
+    case "m":
+      if(mode == 1) {
+        console.log("Single-display numerosity...");
+
+        drawLinearTogether(getCorrelatedDistribution(numShapes), symbol1, getGaussianDistribution(numShapes2), symbol2);
+
+        console.log(computeOverlapPercentage(getPositions(1)) + "%");
+
+      } else {
+        console.log("Double-display numerosity...");
+
       }
       break;
     case "s":

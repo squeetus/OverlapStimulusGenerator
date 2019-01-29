@@ -182,64 +182,64 @@ function drawSymbols(symbol, symbol2) {
     });
 }
 
-function drawLinear(correlatedPositions, gaussianPositions, symbol1, symbol2) {
-  let sv = (which == 1) ? svg : svg2;
-  let rotate = (which == 1) ? svgRotation : svgRotation2;
-
-  sv.selectAll(".shapecontainer").remove();
-
-  // draw linear
-  s = sv.selectAll(".shape1")
-          .data([...Array(correlatedPositions.length).keys()])
-          .enter().append("g")
-            .classed("shapecontainer", true)
-            .attr('transform', function(d, i) {
-              return 'translate(' +  correlatedPositions[i][0] + ',' +
-              correlatedPositions[i][1] + ') rotate(' + (-rotate)  + ' 0 0)';
-            });
-  s.append("path")
-    .classed("shape1", true)
-    .attr("id", function(d, i) { return i; })
-    .attr("d", symbol1())
-    .style("stroke", "black")
-    .style("fill", "none")
-    .style("fill-opacity", 1)
-    .style("opacity", 1);
-
-  sv.selectAll(".shapecontainer")
-    .attr("transform", function(d,i) {
-      var myXform = d3.select(this).attr("transform");
-      return myXform.slice(0, myXform.indexOf("rotate")) + ' rotate(' + (-rotate)  + ' 0 0)';
-    });
-
-  // draw gaussian
-  if(mode == 2) {
-    sv = svg2;
-    sv.selectAll(".shapecontainer").remove();
-  }
-  s = sv.selectAll(".shape2")
-          .data([...Array(gaussianPositions.length).keys()])
-          .enter().append("g")
-            .classed("shapecontainer", true)
-            .attr('transform', function(d, i) {
-              return 'translate(' +  gaussianPositions[i][0] + ',' +
-              gaussianPositions[i][1] + ') rotate(' + (-rotate)  + ' 0 0)';
-            });
-  s.append("path")
-    .classed("shape2", true)
-    .attr("id", function(d, i) { return i; })
-    .attr("d", symbol2())
-    .style("stroke", "black")
-    .style("fill", "none")
-    .style("fill-opacity", 1)
-    .style("opacity", 1);
-
-  sv.selectAll(".shapecontainer")
-    .attr("transform", function(d,i) {
-      var myXform = d3.select(this).attr("transform");
-      return myXform.slice(0, myXform.indexOf("rotate")) + ' rotate(' + (-rotate)  + ' 0 0)';
-    });
-}
+// function drawLinear(correlatedPositions, gaussianPositions, symbol1, symbol2) {
+//   let sv = (which == 1) ? svg : svg2;
+//   let rotate = (which == 1) ? svgRotation : svgRotation2;
+//
+//   sv.selectAll(".shapecontainer").remove();
+//
+//   // draw linear
+//   s = sv.selectAll(".shape1")
+//           .data([...Array(correlatedPositions.length).keys()])
+//           .enter().append("g")
+//             .classed("shapecontainer", true)
+//             .attr('transform', function(d, i) {
+//               return 'translate(' +  correlatedPositions[i][0] + ',' +
+//               correlatedPositions[i][1] + ') rotate(' + (-rotate)  + ' 0 0)';
+//             });
+//   s.append("path")
+//     .classed("shape1", true)
+//     .attr("id", function(d, i) { return i; })
+//     .attr("d", symbol1())
+//     .style("stroke", "black")
+//     .style("fill", "none")
+//     .style("fill-opacity", 1)
+//     .style("opacity", 1);
+//
+//   sv.selectAll(".shapecontainer")
+//     .attr("transform", function(d,i) {
+//       var myXform = d3.select(this).attr("transform");
+//       return myXform.slice(0, myXform.indexOf("rotate")) + ' rotate(' + (-rotate)  + ' 0 0)';
+//     });
+//
+//   // draw gaussian
+//   if(mode == 2) {
+//     sv = svg2;
+//     sv.selectAll(".shapecontainer").remove();
+//   }
+//   s = sv.selectAll(".shape2")
+//           .data([...Array(gaussianPositions.length).keys()])
+//           .enter().append("g")
+//             .classed("shapecontainer", true)
+//             .attr('transform', function(d, i) {
+//               return 'translate(' +  gaussianPositions[i][0] + ',' +
+//               gaussianPositions[i][1] + ') rotate(' + (-rotate)  + ' 0 0)';
+//             });
+//   s.append("path")
+//     .classed("shape2", true)
+//     .attr("id", function(d, i) { return i; })
+//     .attr("d", symbol2())
+//     .style("stroke", "black")
+//     .style("fill", "none")
+//     .style("fill-opacity", 1)
+//     .style("opacity", 1);
+//
+//   sv.selectAll(".shapecontainer")
+//     .attr("transform", function(d,i) {
+//       var myXform = d3.select(this).attr("transform");
+//       return myXform.slice(0, myXform.indexOf("rotate")) + ' rotate(' + (-rotate)  + ' 0 0)';
+//     });
+// }
 
 // function drawNumerosity(positions, symbol, count, symbol2, count2) {
 //   // let s = (which == 1) ? shapes : shapes2;

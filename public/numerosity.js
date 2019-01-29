@@ -164,7 +164,7 @@ function getOverlapDistribution(num, desiredOverlap) {
   // var anchorPositions = num/4;
   var x, y;
   if(!desiredOverlap) desiredOverlap = 0.2;
-  var overlapThreshold = 4; // max number of overlaps for a new overlapping position
+  // var overlapThreshold = 4; // max number of overlaps for a new overlapping position
 
   // bounds of possible x and y coordinates (given width, height, and bcr)
   xRange = [
@@ -216,22 +216,9 @@ function getOverlapDistribution(num, desiredOverlap) {
         x = anchor[0] + dx;
         y = anchor[1] + dy;
 
-      } while(!validOverlapPoint([x, y]));
+      } while(!validOverlapPoint([x, y], positions));
 
       return [x,y];
-  }
-
-  // is the point p([x, y]) in screen bounds?
-  function inBounds(p) {
-    // check bounds of display
-    if((p[0]-2*bcr) <= 0 ||
-      (p[0]+2*bcr) >= width ||
-      (p[1]-2*bcr) <= 0 ||
-      (p[1]+2*bcr) >= height) {
-      console.log("out of bounds.");
-      return false;
-    }
-    return true;
   }
 
   // does the point p([x, y]) overlap any other positions?
