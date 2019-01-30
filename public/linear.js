@@ -4,7 +4,7 @@ var mean = width/2, variance = 6000;
 numShapes = numShapes2 = 50;
 
 // correlation for linear trend task
-var correlation = 0.7; // easy, medium, hard?
+var correlation = 0.6; // easy, medium, hard?
 
 function redrawSymbols() {
   if(mode == 1) {
@@ -32,6 +32,7 @@ function drawLinearTogether(correlatedPositions, symbol, gaussianPositions, symb
   }
 
   var positions = splicePositions(correlatedPositions, gaussianPositions);
+  positions = coerceOverlaps(positions);
 
   // draw linear
   sv.selectAll(".shapecontainer").remove();
@@ -147,6 +148,106 @@ function getGaussianDistribution(num) {
     positions.push([x,y]);
   }
   return positions;
+}
+
+// take the current set of positions and coerce them to a specific overlap percentage
+function coerceOverlaps(positions) {
+  var x, y;
+  var point;
+
+  var maxTries = 5; // tries before giving up
+  var tries = 0;  // current tries
+  var numToResample = 0; // guess at number of shapes to resample
+  var overlapPercentage = computeOverlapPercentage(positions);
+
+
+  // keep trying until tries are exhausted or we're close enough
+  while((++tries < maxTries) &&
+      Math.abs(overlapPercentage - desiredOverlapPercentage) > 0.05) {
+
+    // guess half the difference between overlaps, or 1
+    numToResample = Math.max(Math.abs(overlapPercentage - desiredOverlapPercentage) * 50, 1);
+
+    console.log('try: ', tries, overlapPercentage, desiredOverlapPercentage, numToResample);
+
+    // too many overlaps
+    if(overlapPercentage - desiredOverlapPercentage > 0) {
+      console.log('get rid of some overlaps');
+      // resample some overlapping shapes (from gaussian distribution)
+      // find overlapping shapes
+      for(var i = 0; i < numToResample; i++) {
+        var idx = findOverlapping(positions); // get index of an overlap
+        // console.log('found', positions[idx], 'at index', idx);
+        // if valid index...
+        if(idx > 0 && idx < positions.length) {
+          // find a new valid non-overlapping point
+          do {
+
+            point = sampleGaussian();
+            // console.log('resampling...', validOverlapPoint(point, positions), countOverlapsForPoint(point, positions));
+          } while(!validOverlapPoint(point, positions) || countOverlapsForPoint(point, positions) > 0 );
+
+          // replace the point!
+          // console.log('replacing', positions[idx], 'with', point, 'at index', idx);
+          positions[idx] = point;
+        }
+      }
+    } else { // not enough overlaps
+      console.log('add some overlaps');
+      // resample a non-overlapping shape (from gaussian distribution)
+      // find non-overlapping shapes
+      for(var i = 0; i < numToResample; i++) {
+        var idx = findNonOverlapping(positions); // get index of a non-overlap
+        // console.log('found', positions[idx], 'at index', idx);
+        // if valid index...
+        if(idx > 0 && idx < positions.length) {
+          // find a new valid non-overlapping point
+          do {
+            point = sampleGaussian();
+            // console.log('resampling...', validOverlapPoint(point, positions), countOverlapsForPoint(point, positions));
+          } while(!validOverlapPoint(point, positions) || countOverlapsForPoint(point, positions) === 0 );
+
+          // replace the point!
+          // console.log('replacing', positions[idx], 'with', point, 'at index', idx);
+          positions[idx] = point;
+        }
+      }
+
+    }
+
+    // update overlapPercentage
+    overlapPercentage = computeOverlapPercentage(positions);
+  }
+
+  return positions;
+}
+
+function sampleGaussian() {
+  x = distribution.ppf(Math.random());
+  y = distribution.ppf(Math.random());
+  return [x,y];
+}
+
+// find a point (in an odd index) which has overlaps
+function findOverlapping(positions) {
+  for(var i = 1; i < positions.length; i+=2) {
+    if(countOverlapsForPointAtIndex(i, positions) > 0) {
+      // console.log('eureka, found an index with overlaps!', i);
+      return i;
+    }
+  }
+  return -1;
+}
+
+// find a point (in an odd index) which has no overlaps
+function findNonOverlapping(positions) {
+  for(var i = 1; i < positions.length; i+=2) {
+    if(countOverlapsForPointAtIndex(i, positions) === 0) {
+      // console.log('eureka, found an index with no overlaps!', i);
+      return i;
+    }
+  }
+  return -1;
 }
 
 function getCorrelatedDistribution(num) {

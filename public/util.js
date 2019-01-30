@@ -199,12 +199,16 @@ function inBounds(p) {
     (p[0]+2*bcr) >= width - (width * 0.1) || //right
     (p[1]-2*bcr) <= height * 0.1 ||
     (p[1]+2*bcr) >= height - (height * 0.1)) {
-    console.log("out of bounds.");
+    // console.log("out of bounds.");
     return false;
   }
   return true;
 }
 
+// return true if a given point is:
+//  - in bounds
+//  - not too close to any other shapes
+//  - lower than individual overlap threshold
 function validOverlapPoint(p, positions) {
 
   if(!inBounds(p)) return false;
@@ -228,4 +232,38 @@ function validOverlapPoint(p, positions) {
   }
 
   return (overlaps < overlapThreshold);
+}
+
+function countOverlapsForPoint(p, positions) {
+  var overlaps = 0;
+
+  for(var i = 0; i < positions.length; i++) {
+    // count the number of overlaps
+    if((Math.abs(p[0] - positions[i][0]) < 2*bcr) &&
+     (Math.abs(p[1] - positions[i][1]) < 2*bcr)){
+
+      overlaps++;
+    }
+  }
+
+  return overlaps;
+}
+
+function countOverlapsForPointAtIndex(idx, positions) {
+  var overlaps = 0;
+  var p = positions[idx];
+
+  for(var i = 0; i < positions.length; i++) {
+
+    if(i == idx) continue; // don't count self
+
+    // count the number of overlaps
+    if((Math.abs(p[0] - positions[i][0]) < 2*bcr) &&
+     (Math.abs(p[1] - positions[i][1]) < 2*bcr)){
+
+      overlaps++;
+    }
+  }
+
+  return overlaps;
 }

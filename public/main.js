@@ -14,7 +14,7 @@ var numShapes = 37;
 var numShapes2 = 63;
 
 // proportion of shapes in each display that should have overlaps
-var desiredOverlapPercentage = 0.3;
+var desiredOverlapPercentage = 0.7;
 var desiredOverlapPercentage2 = 0.7;
 
 var overlapThreshold = 4; // max number of overlaps for a new overlapping position
@@ -189,14 +189,14 @@ document.addEventListener('keypress', (event) => {
       break;
     case "m":
       if(mode == 1) {
-        console.log("Single-display numerosity...");
+        console.log("Single-display linear...");
 
         drawLinearTogether(getCorrelatedDistribution(numShapes), symbol1, getGaussianDistribution(numShapes2), symbol2);
 
-        console.log(computeOverlapPercentage(getPositions(1)) + "%");
+        console.log(computeOverlapPercentage(getPositions(1))*100 + "%");
 
       } else {
-        console.log("Double-display numerosity...");
+        console.log("Double-display linear...");
 
       }
       break;
