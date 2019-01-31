@@ -3,9 +3,6 @@ var mean = width/2, variance = 6000;
 
 numShapes = numShapes2 = 50;
 
-// correlation for linear trend task
-var correlation = 0.6; // easy, medium, hard?
-
 function redrawSymbols() {
   if(mode == 1) {
     // drawNumerosityTogether(getPositions(), symbol1, numShapes, symbol2, numShapes2);
@@ -126,9 +123,67 @@ function drawLinear(correlatedPositions, gaussianPositions, symbol1, symbol2) {
 }
 
 
-function drawLinearSeparately(positions, symbol, count, positions2, symbol2, count2) {
+function drawLinearSeparately(correlatedPositions, symbol, gaussianPositions, symbol2) {
 
-}
+    let rotate = svgRotation;
+
+    correlatedPositions = coerceOverlapsWithCorrelation(correlatedPositions);
+    gaussianPositions = coerceOverlaps(gaussianPositions);
+
+    // draw linear
+    svg.selectAll(".shapecontainer").remove();
+    s = svg.selectAll(".shape1")
+            .data([...Array(correlatedPositions.length).keys()])
+            .enter().append("g")
+              .classed("shapecontainer", true)
+              .attr('transform', function(d, i) {
+                return 'translate(' +  correlatedPositions[i][0] + ',' +
+                correlatedPositions[i][1] + ') rotate(' + (-rotate)  + ' 0 0)';
+              });
+    s.append("path")
+      .classed("shape1", true)
+      .attr("id", function(d, i) { return i; })
+      .attr("d", symbol1)
+      .style("stroke", "black")
+      .style("fill", "none")
+      .style("fill-opacity", 1)
+      .style("opacity", 1);
+
+    svg.selectAll(".shapecontainer")
+      .attr("transform", function(d,i) {
+        var myXform = d3.select(this).attr("transform");
+        return myXform.slice(0, myXform.indexOf("rotate")) + ' rotate(' + (-rotate)  + ' 0 0)';
+      });
+
+
+
+    rotate = svgRotation2;
+
+    svg2.selectAll(".shapecontainer").remove();
+    s = svg2.selectAll(".shape")
+            .data([...Array(gaussianPositions.length).keys()])
+            .enter().append("g")
+              .classed("shapecontainer", true)
+              .attr('transform', function(d, i) {
+                return 'translate(' +  gaussianPositions[i][0] + ',' +
+                gaussianPositions[i][1] + ') rotate(' + (-rotate)  + ' 0 0)';
+              });
+    s.append("path")
+      .classed("shape1", true)
+      .attr("id", function(d, i) { return i; })
+      .attr("d", symbol2)
+      .style("stroke", "black")
+      .style("fill", "none")
+      .style("fill-opacity", 1)
+      .style("opacity", 1);
+
+    svg2.selectAll(".shapecontainer")
+      .attr("transform", function(d,i) {
+        var myXform = d3.select(this).attr("transform");
+        return myXform.slice(0, myXform.indexOf("rotate")) + ' rotate(' + (-rotate)  + ' 0 0)';
+      });
+
+  }
 
 
 
@@ -155,7 +210,7 @@ function coerceOverlaps(positions) {
   var x, y;
   var point;
 
-  var maxTries = 5; // tries before giving up
+  var maxTries = 50; // tries before giving up
   var tries = 0;  // current tries
   var numToResample = 0; // guess at number of shapes to resample
   var overlapPercentage = computeOverlapPercentage(positions);
@@ -163,7 +218,7 @@ function coerceOverlaps(positions) {
 
   // keep trying until tries are exhausted or we're close enough
   while((++tries < maxTries) &&
-      Math.abs(overlapPercentage - desiredOverlapPercentage) > 0.05) {
+      Math.abs(overlapPercentage - desiredOverlapPercentage) > 0.025) {
 
     // guess half the difference between overlaps, or 1
     numToResample = Math.max(Math.abs(overlapPercentage - desiredOverlapPercentage) * 50, 1);
@@ -222,6 +277,93 @@ function coerceOverlaps(positions) {
   return positions;
 }
 
+function coerceOverlapsWithCorrelation(positions) {
+  var x, y;
+  var point;
+
+  var maxTries = 50; // tries before giving up
+  var tries = 0;  // current tries
+  var numToResample = 0; // guess at number of shapes to resample
+  var overlapPercentage = computeOverlapPercentage(positions);
+  var r = correlation(positions);
+
+  // console.log('!!',(++tries < maxTries),
+  //     Math.abs(overlapPercentage - desiredOverlapPercentage) > 0.025,
+  //     Math.abs(r - targetCorrelation) > 0.025);
+  //     console.log(r, targetCorrelation);
+
+  // keep trying until tries are exhausted or we're close enough
+  //   (both to overlap percentage and linear correlation)
+  while((++tries < maxTries) &&
+      (Math.abs(overlapPercentage - desiredOverlapPercentage) > 0.025 ||
+      Math.abs(r - targetCorrelation) > 0.025)) {
+
+    // guess half the difference between overlaps, or 1
+    numToResample = Math.max(Math.abs(overlapPercentage - desiredOverlapPercentage) * 50, 1);
+
+    console.log('(correlated) try: ', tries, overlapPercentage, desiredOverlapPercentage, numToResample, r, targetCorrelation);
+
+    // too many overlaps
+    if(overlapPercentage - desiredOverlapPercentage > 0) {
+      console.log('get rid of some overlaps');
+      // resample some overlapping shapes (from gaussian distribution)
+      // find overlapping shapes
+      for(var i = 0; i < numToResample; i++) {
+        var idx = findOverlapping(positions); // get index of an overlap
+        // console.log('found', positions[idx], 'at index', idx);
+        // if valid index...
+        if(idx > 0 && idx < positions.length) {
+          // find a new valid non-overlapping point
+          do {
+
+            point = sampleGaussian();
+
+            // try using the lambda function here?
+            // TODO
+
+            // console.log('resampling...', validOverlapPoint(point, positions), countOverlapsForPoint(point, positions));
+          } while(!validOverlapPoint(point, positions) || countOverlapsForPoint(point, positions) > 0 );
+
+          // replace the point!
+          // console.log('replacing', positions[idx], 'with', point, 'at index', idx);
+          positions[idx] = point;
+        }
+      }
+    } else { // not enough overlaps
+      console.log('add some overlaps');
+      // resample a non-overlapping shape (from gaussian distribution)
+      // find non-overlapping shapes
+      for(var i = 0; i < numToResample; i++) {
+        var idx = findNonOverlapping(positions); // get index of a non-overlap
+        // console.log('found', positions[idx], 'at index', idx);
+        // if valid index...
+        if(idx > 0 && idx < positions.length) {
+          // find a new valid non-overlapping point
+          do {
+            point = sampleGaussian();
+
+            // try using the lambda function here?
+            // TODO
+
+            // console.log('resampling...', validOverlapPoint(point, positions), countOverlapsForPoint(point, positions));
+          } while(!validOverlapPoint(point, positions) || countOverlapsForPoint(point, positions) === 0 );
+
+          // replace the point!
+          // console.log('replacing', positions[idx], 'with', point, 'at index', idx);
+          positions[idx] = point;
+        }
+      }
+
+    }
+
+    // update overlapPercentage
+    overlapPercentage = computeOverlapPercentage(positions);
+    r = correlation(positions);
+  }
+
+  return positions;
+}
+
 function sampleGaussian() {
   x = distribution.ppf(Math.random());
   y = distribution.ppf(Math.random());
@@ -252,20 +394,23 @@ function findNonOverlapping(positions) {
 
 function getCorrelatedDistribution(num) {
   // var num = (which == 1) ? numShapes : numShapes2;
-  var positions = [];
-  var x, y;
+  var positions, x, y;
 
-  distribution = gaussian(mean, variance);
-  // get a gaussian distribution of x and y positions
-  positions = getGaussianDistribution(num);
+  do {
+    positions = [];
+    distribution = gaussian(mean, variance);
+    // get a gaussian distribution of x and y positions
+    positions = getGaussianDistribution(num);
 
-  // // transform each y to y'
-  var l = lambda(correlation);
-  for(i = 0; i < num; i++) {
-    x = positions[i][0];
-    y = positions[i][1];
-    positions[i][1] = (((l*x) + ((1-l)*y))/(Math.sqrt((l*l) + ((1-l)*(1-l)))));
-  }
+    // // transform each y to y'
+    var l = lambda(targetCorrelation);
+    for(i = 0; i < num; i++) {
+      x = positions[i][0];
+      y = positions[i][1];
+      positions[i][1] = (((l*x) + ((1-l)*y))/(Math.sqrt((l*l) + ((1-l)*(1-l)))));
+    }
+  } while(Math.abs(correlation(positions) - targetCorrelation) > 0.02 );
+
 
   // if any point is > 2.5 stddev from mean, remove it and generate a new point
 

@@ -17,6 +17,10 @@ var numShapes2 = 63;
 var desiredOverlapPercentage = 0.7;
 var desiredOverlapPercentage2 = 0.7;
 
+// master correlation target for all linear trend displays
+// (we only want to vary overlap percentage for difficulty)
+var targetCorrelation = 0.7;
+
 var overlapThreshold = 4; // max number of overlaps for a new overlapping position
 
 var currSymbol = 1, symbol1 = dot, symbol2 = dot;
@@ -166,7 +170,7 @@ document.addEventListener('keypress', (event) => {
         do {
           console.log("Single-display numerosity...");
           drawNumerosityTogether(getOverlapDistribution(numShapes + numShapes2, desiredOverlapPercentage-0.2), symbol1, numShapes, symbol2, numShapes2);
-        } while (Math.abs(computeOverlapPercentage(getPositions()) - desiredOverlapPercentage) > 0.05 );
+        } while (Math.abs(computeOverlapPercentage(getPositions()) - desiredOverlapPercentage) > 0.025 );
 
         // computeOverlaps(getPositions());
         console.log(computeOverlapPercentage(getPositions(1)) + "%");
@@ -176,28 +180,49 @@ document.addEventListener('keypress', (event) => {
           console.log("Double-display numerosity...");
           drawNumerositySeparately(getOverlapDistribution(numShapes, desiredOverlapPercentage-0.2), symbol1, numShapes, getOverlapDistribution(numShapes2, desiredOverlapPercentage2-0.2), symbol2, numShapes2);
 
-        } while ((Math.abs(computeOverlapPercentage(getPositions(1)) - desiredOverlapPercentage) > 0.05) || (Math.abs(computeOverlapPercentage(getPositions(2)) - desiredOverlapPercentage2) > 0.05) );
+        } while ((Math.abs(computeOverlapPercentage(getPositions(1)) - desiredOverlapPercentage) > 0.025) || (Math.abs(computeOverlapPercentage(getPositions(2)) - desiredOverlapPercentage2) > 0.025) );
 
-        console.log('left display:');
-        // computeOverlaps(getPositions(1));
-        console.log(computeOverlapPercentage(getPositions(1)) + "%");
+        console.log('left overlaps:', computeOverlapPercentage(getPositions(1)) + "%");
 
-        console.log('right display:');
-        // computeOverlaps(getPositions(2));
-        console.log(computeOverlapPercentage(getPositions(2)) + "%");
+        console.log('right overlaps:', computeOverlapPercentage(getPositions(2)) + "%");
       }
       break;
     case "m":
       if(mode == 1) {
-        console.log("Single-display linear...");
+        do {
+          console.log("Single-display linear...");
 
-        drawLinearTogether(getCorrelatedDistribution(numShapes), symbol1, getGaussianDistribution(numShapes2), symbol2);
+          // var cont = alert("continue?");
 
-        console.log(computeOverlapPercentage(getPositions(1))*100 + "%");
+          drawLinearTogether(getCorrelatedDistribution(numShapes), symbol1, getGaussianDistribution(numShapes2), symbol2);
+
+          console.log(computeOverlapPercentage(getPositions(1))*100 + "%");
+
+        } while (Math.abs(computeOverlapPercentage(getPositions(1)) - desiredOverlapPercentage) > 0.025);
+
+        // console.log('pearson\'s r', correlation(getPositions(1)));
+        // console.log(computeOverlapPercentage(getPositions(1))*100 + "%");
 
       } else {
-        console.log("Double-display linear...");
+        do {
+          console.log("Double-display linear...");
 
+          drawLinearSeparately(getCorrelatedDistribution(numShapes), symbol1, getGaussianDistribution(numShapes2), symbol2);
+
+          console.log('correlated pearson\'s r', correlation(getPositions(1)));
+          console.log('gaussian pearson\'s r', correlation(getPositions(2)));
+
+          console.log('left overlaps:', computeOverlapPercentage(getPositions(1)) + "%");
+          console.log('right overlaps:', computeOverlapPercentage(getPositions(2)) + "%");
+
+        } while (Math.abs(computeOverlapPercentage(getPositions(1)) - desiredOverlapPercentage) > 0.025 || Math.abs(correlation(getPositions(1)) - targetCorrelation) > 0.025);
+
+
+        // console.log('correlated pearson\'s r', correlation(getPositions(1)));
+        // console.log('gaussian pearson\'s r', correlation(getPositions(2)));
+        //
+        // console.log('left overlaps:', computeOverlapPercentage(getPositions(1)) + "%");
+        // console.log('right overlaps:', computeOverlapPercentage(getPositions(2)) + "%");
       }
       break;
     case "s":

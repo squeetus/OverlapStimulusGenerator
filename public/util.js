@@ -267,3 +267,28 @@ function countOverlapsForPointAtIndex(idx, positions) {
 
   return overlaps;
 }
+
+// return Pearson's Correlation Coefficient r_xy
+function correlation(points) {
+  var sumX = 0,
+      sumY = 0,
+      sumXY = 0,
+      sumX2 = 0,
+      sumY2 = 0,
+      p,
+      n = points.length;
+
+  for(var i = 0; i < points.length; i++) {
+    p = points[i];
+    sumX += p[0];
+    sumY += p[1];
+    sumXY += (p[0] * p[1]);
+    sumX2 += (p[0] * p[0]);
+    sumY2 += (p[1] * p[1]);
+  }
+
+  var numerator = ((n * sumXY) - (sumX * sumY));
+  var denominator = Math.sqrt((n * sumX2 - (sumX * sumX))*(n * sumY2 - (sumY * sumY)));
+
+  return  numerator / denominator;
+}
