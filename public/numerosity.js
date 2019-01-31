@@ -1,3 +1,8 @@
+var task = 'numerosity';
+
+function swapSides() {
+  drawNumerositySeparately(getPositions(2), symbol2, numShapes2, getPositions(1), symbol1, numShapes1);
+}
 
 function redrawSymbols() {
   if(mode == 1) {

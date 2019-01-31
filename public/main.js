@@ -13,6 +13,9 @@ var width = 500,
 var numShapes = 37;
 var numShapes2 = 63;
 
+// for separate-display trials, which side should be correct?
+var correctSide = 2;
+
 // proportion of shapes in each display that should have overlaps
 var desiredOverlapPercentage = 0.7;
 var desiredOverlapPercentage2 = 0.7;
@@ -172,7 +175,6 @@ document.addEventListener('keypress', (event) => {
           drawNumerosityTogether(getOverlapDistribution(numShapes + numShapes2, desiredOverlapPercentage-0.2), symbol1, numShapes, symbol2, numShapes2);
         } while (Math.abs(computeOverlapPercentage(getPositions()) - desiredOverlapPercentage) > 0.025 );
 
-        // computeOverlaps(getPositions());
         console.log(computeOverlapPercentage(getPositions(1)) + "%");
 
       } else {
@@ -192,16 +194,15 @@ document.addEventListener('keypress', (event) => {
         do {
           console.log("Single-display linear...");
 
-          // var cont = alert("continue?");
-
           drawLinearTogether(getCorrelatedDistribution(numShapes), symbol1, getGaussianDistribution(numShapes2), symbol2);
 
           console.log(computeOverlapPercentage(getPositions(1))*100 + "%");
 
         } while (Math.abs(computeOverlapPercentage(getPositions(1)) - desiredOverlapPercentage) > 0.025);
 
-        // console.log('pearson\'s r', correlation(getPositions(1)));
-        // console.log(computeOverlapPercentage(getPositions(1))*100 + "%");
+        var sets = splitPositions(getPositions(1));
+        console.log('shape1 r:', correlation(sets[0]));
+        console.log('shape2 r:', correlation(sets[1]));
 
       } else {
         do {
@@ -209,20 +210,16 @@ document.addEventListener('keypress', (event) => {
 
           drawLinearSeparately(getCorrelatedDistribution(numShapes), symbol1, getGaussianDistribution(numShapes2), symbol2);
 
-          console.log('correlated pearson\'s r', correlation(getPositions(1)));
-          console.log('gaussian pearson\'s r', correlation(getPositions(2)));
+          console.log('left r:', correlation(getPositions(1)));
+          console.log('right r:', correlation(getPositions(2)));
 
           console.log('left overlaps:', computeOverlapPercentage(getPositions(1)) + "%");
           console.log('right overlaps:', computeOverlapPercentage(getPositions(2)) + "%");
 
-        } while (Math.abs(computeOverlapPercentage(getPositions(1)) - desiredOverlapPercentage) > 0.025 || Math.abs(correlation(getPositions(1)) - targetCorrelation) > 0.025);
+        } while (Math.abs(computeOverlapPercentage(getPositions(1)) - desiredOverlapPercentage) > 0.025 ||
+        Math.abs(computeOverlapPercentage(getPositions(2)) - desiredOverlapPercentage2) > 0.025 ||
+        Math.abs(correlation(getPositions(correctSide)) - targetCorrelation) > 0.025);
 
-
-        // console.log('correlated pearson\'s r', correlation(getPositions(1)));
-        // console.log('gaussian pearson\'s r', correlation(getPositions(2)));
-        //
-        // console.log('left overlaps:', computeOverlapPercentage(getPositions(1)) + "%");
-        // console.log('right overlaps:', computeOverlapPercentage(getPositions(2)) + "%");
       }
       break;
     case "s":
@@ -232,8 +229,11 @@ document.addEventListener('keypress', (event) => {
       rotateSVG();
       break;
     case "p":
-      sendPositions();
+      sendStimulusData();
+      // sendPositions();
       break;
+    case "w":
+      swapSides();
   }
 
   // console.log('keypress event\n\n' + 'key: ' + keyName);

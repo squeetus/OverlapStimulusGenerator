@@ -44,6 +44,76 @@ function sendPositions() {
   });
 }
 
+function sendStimulusData() {
+  // : positions      x
+  // : rotation       x
+  // : shapes         x
+  // : task           x
+  // : num displays   x
+  // : extras
+  //    : linear - correlation of both sets
+  //    : both - overlap percentage of both sets
+
+  var data = {};
+
+  if(mode == 1) {
+    data.positions = getPositions(1);
+
+    data.rotation = svgRotation % 360;
+
+    data.shape1 = symbol1.name;
+    data.shape2 = symbol2.name;
+
+    data.overlap = computeOverlapPercentage(getPositions(1));
+
+  } else {
+    data.positions1 = getPositions(1);
+    data.positions2 = getPositions(2);
+
+    data.rotation1 = svgRotation % 360;
+    data.rotation2 = svgRotation2 % 360;
+
+    data.shape1 = symbol1.name;
+    data.shape2 = symbol2.name;
+
+    data.overlap1 = computeOverlapPercentage(getPositions(1));
+
+    data.overlap2 = computeOverlapPercentage(getPositions(2));
+  }
+
+  if(task == 'linear') {
+    if(mode == 1) {
+      var sets = splitPositions(getPositions(1));
+      data.correlation1 = correlation(sets[0]);
+      data.correlation2 = correlation(sets[1]);
+    } else {
+      data.correlation1 = correlation(getPositions(1));
+      data.correlation2 = correlation(getPositions(2));
+    }
+  }
+
+  data.task = task;
+  data.numDisplays = mode;
+
+
+  POST(data, function(r) {
+    console.log(r.status);
+  });
+}
+
+function splitPositions(positions) {
+  var a = [];
+  var b = [];
+  for(var i = 0; i < positions.length; i++) {
+    if(i%2 === 0) {
+      a.push(positions[i]);
+    } else {
+      b.push(positions[i]);
+    }
+  }
+  return [a, b];
+}
+
 // compute the average position of an array of [x,y] points
 function averagePosition(positions) {
   avgPos = [0,0];
