@@ -3,7 +3,7 @@
  *    Helper Functions for all scripts
  *
  */
- var pretty = false;
+var pretty = false;
 
 // compute radians from degrees
 function degToRad(deg) {
@@ -14,7 +14,6 @@ function degToRad(deg) {
 function getPositions(which) {
   var sv = (which == 2) ? svg2 : svg;
   var positions = [];
-  // s.each(function(d) {
   sv.selectAll(".shapecontainer").each(function(d) {
     translate = d3.select(this).attr("transform");
     pos = translate.substring(translate.indexOf("(")+1, translate.indexOf(")")).split(",");
@@ -25,7 +24,7 @@ function getPositions(which) {
   return positions;
 }
 
-// send all the current positions to the server to save
+// (OLD) send all the current positions to the server to save
 function sendPositions() {
   var data = {};
   var tmp = which;
@@ -107,6 +106,7 @@ function sendStimulusData() {
   });
 }
 
+// undo the splicing from the linear trend task
 function splitPositions(positions) {
   var a = [];
   var b = [];
@@ -197,10 +197,9 @@ function computeOverlaps(positions) {
   console.log(sum(counts), average(counts), stddev(counts));
 }
 
+// compute the percentage of overlapping positions (considering bounding cirle radius)
 function computeOverlapPercentage(positions) {
-  // console.log(positions);
   var overlaps = 0;
-
   var px = 0, py = 0;
 
   // for each position, check for overlaps in (bcr) around point
@@ -212,7 +211,6 @@ function computeOverlapPercentage(positions) {
     }
   }
 
-  // console.log(overlaps/positions.length, 'overlap percentage');
   return overlaps/positions.length;
 }
 
@@ -264,6 +262,7 @@ function randomFromInterval(min, max, decimels) {
     return +(Math.random()*(max-min)+min).toFixed(decimels || 3);
 }
 
+// return euclidean distance between points
 function distance(p1, p2) {
   return Math.sqrt(Math.pow((p1[0] - p2[0]), 2) + Math.pow((p1[1] - p2[1]), 2));
 }
@@ -275,7 +274,6 @@ function inBounds(p) {
     (p[0]+2*bcr) >= width - (width * 0.1) || //right
     (p[1]-2*bcr) <= height * 0.1 ||
     (p[1]+2*bcr) >= height - (height * 0.1)) {
-    // console.log("out of bounds.");
     return false;
   }
   return true;
@@ -310,6 +308,7 @@ function validOverlapPoint(p, positions) {
   return (overlaps < overlapThreshold);
 }
 
+// count the number of points which overlap with point 'p' (considering bcr)
 function countOverlapsForPoint(p, positions) {
   var overlaps = 0;
 
@@ -317,7 +316,6 @@ function countOverlapsForPoint(p, positions) {
     // count the number of overlaps
     if((Math.abs(p[0] - positions[i][0]) < 2*bcr) &&
      (Math.abs(p[1] - positions[i][1]) < 2*bcr)){
-
       overlaps++;
     }
   }
@@ -325,18 +323,17 @@ function countOverlapsForPoint(p, positions) {
   return overlaps;
 }
 
+// count the number of points which overlap with point at index 'idx' (considering bcr)
 function countOverlapsForPointAtIndex(idx, positions) {
   var overlaps = 0;
   var p = positions[idx];
 
   for(var i = 0; i < positions.length; i++) {
-
     if(i == idx) continue; // don't count self
 
     // count the number of overlaps
     if((Math.abs(p[0] - positions[i][0]) < 2*bcr) &&
      (Math.abs(p[1] - positions[i][1]) < 2*bcr)){
-
       overlaps++;
     }
   }

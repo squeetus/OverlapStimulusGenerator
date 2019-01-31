@@ -9,14 +9,11 @@ var width = 500,
     height = 500,
     center = [width/2, height/2];
 
-// number of shapes in categories 1 and 2
-var numShapes = 37;
-var numShapes2 = 63;
-
 // for separate-display trials, which side should be correct?
 var correctSide = 2;
 
 // proportion of shapes in each display that should have overlaps
+// Note: both overlap percentages will be equal for all trials
 var desiredOverlapPercentage = 0.7;
 var desiredOverlapPercentage2 = 0.7;
 
@@ -101,14 +98,9 @@ function modifySymbol(s) {
   redrawSymbols();
 }
 
-
-
-
-
-
-
 /*
  *  Keypress Events
+ *
  */
 document.addEventListener('keypress', (event) => {
   const keyName = event.key;
@@ -119,34 +111,27 @@ document.addEventListener('keypress', (event) => {
       break;
     case "2":
       modifySymbol(circle);
-      // drawSymbols(circles);
       break;
     case "3":
       modifySymbol(pentagon);
-      // drawSymbols(pentagon);
       break;
     case "4":
       modifySymbol(square);
-      // drawSymbols(square);
       break;
     case "5":
       modifySymbol(triangle);
       break;
     case "6":
       modifySymbol(sixLine);
-      // drawSymbols(sixLine);
       break;
     case "7":
       modifySymbol(fiveLine);
-      // drawSymbols(fiveLine);
       break;
     case "8":
       modifySymbol(fourLine);
-      // drawSymbols(fourLine);
       break;
     case "9":
       modifySymbol(threeLine);
-      // drawSymbols(threeLine);
       break;
     case "c":
       if(mode == 1) {
@@ -230,11 +215,9 @@ document.addEventListener('keypress', (event) => {
       break;
     case "p":
       sendStimulusData();
-      // sendPositions();
       break;
     case "w":
       swapSides();
   }
 
-  // console.log('keypress event\n\n' + 'key: ' + keyName);
 });

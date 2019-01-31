@@ -1,3 +1,5 @@
+// OLD; USE /numerosity or /linear for specific task displays
+
 /*
  *
  *  Global Variables

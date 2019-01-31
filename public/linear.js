@@ -1,10 +1,12 @@
-// gaussian distribution
-var mean = width/2, variance = 6000;
-
 var task = 'linear';
 
+// properties of the distribution
+var mean = width/2, variance = 6000;
+
+// number of shapes should be equal for this task
 numShapes = numShapes2 = 50;
 
+// for separate plot displays, swap the distributions
 function swapSides() {
   var tmp;
 
@@ -16,6 +18,7 @@ function swapSides() {
   justDrawLinearSeparately(getPositions(2), symbol1, getPositions(1), symbol2);
 }
 
+// redraw when symbols change
 function redrawSymbols() {
   if(mode == 1) {
     justDrawLinearTogether(getPositions(), symbol1, symbol2);
@@ -24,10 +27,11 @@ function redrawSymbols() {
   }
 }
 
+// single-plot displays
 function drawLinearTogether(correlatedPositions, symbol, gaussianPositions, symbol2) {
 
   // produce a master positions list
-  // assume a and b are the same number
+  // (assume a and b are the same number)
   function splicePositions(a, b) {
     var c = [];
     // loop through each
@@ -38,17 +42,22 @@ function drawLinearTogether(correlatedPositions, symbol, gaussianPositions, symb
     return c;
   }
 
+  // splice both distributions (unbiased rendering order)
   var positions = splicePositions(correlatedPositions, gaussianPositions);
+
+  // coerce the overlaps in the display to desired percentage
   positions = coerceOverlaps(positions);
 
+  // draw the display with the updated positions
   justDrawLinearTogether(positions, symbol, symbol2);
 }
 
+// actually draw the single-plot display
 function justDrawLinearTogether(positions, symbol, symbol2) {
   let sv = svg;
   let rotate = svgRotation;
 
-  // draw linear
+  // draw shapes
   sv.selectAll(".shapecontainer").remove();
   s = sv.selectAll(".shape1")
           .data([...Array(positions.length).keys()])
@@ -73,6 +82,7 @@ function justDrawLinearTogether(positions, symbol, symbol2) {
     .style("fill-opacity", 1)
     .style("opacity", 1);
 
+  // rotate shapes accordingly
   sv.selectAll(".shapecontainer")
     .attr("transform", function(d,i) {
       var myXform = d3.select(this).attr("transform");
@@ -80,23 +90,26 @@ function justDrawLinearTogether(positions, symbol, symbol2) {
     });
 }
 
+// separate-plot displays
 function drawLinearSeparately(correlatedPositions, symbol, gaussianPositions, symbol2) {
 
+  // coerce both distributions to desired overlap threshold
   correlatedPositions = coerceOverlapsWithCorrelation(correlatedPositions);
   gaussianPositions = coerceOverlaps(gaussianPositions);
 
+  // pick which side to draw the distributions to
   if(correctSide == 1) {
     justDrawLinearSeparately(correlatedPositions, symbol, gaussianPositions, symbol2);
   } else if(correctSide == 2) {
     justDrawLinearSeparately(gaussianPositions, symbol, correlatedPositions, symbol2);
   }
-
 }
 
+// actually draw the separate-plot displays
 function justDrawLinearSeparately(positions, symbol, positions2, symbol2) {
   let rotate = svgRotation;
 
-  // draw linear
+  // draw left
   svg.selectAll(".shapecontainer").remove();
   s = svg.selectAll(".shape1")
           .data([...Array(positions.length).keys()])
@@ -115,16 +128,15 @@ function justDrawLinearSeparately(positions, symbol, positions2, symbol2) {
     .style("fill-opacity", 1)
     .style("opacity", 1);
 
+  // rotate shapes accordingly
   svg.selectAll(".shapecontainer")
     .attr("transform", function(d,i) {
       var myXform = d3.select(this).attr("transform");
       return myXform.slice(0, myXform.indexOf("rotate")) + ' rotate(' + (-rotate)  + ' 0 0)';
     });
 
-
-
+  // draw right
   rotate = svgRotation2;
-
   svg2.selectAll(".shapecontainer").remove();
   s = svg2.selectAll(".shape")
           .data([...Array(positions2.length).keys()])
@@ -143,6 +155,7 @@ function justDrawLinearSeparately(positions, symbol, positions2, symbol2) {
     .style("fill-opacity", 1)
     .style("opacity", 1);
 
+  // rotate shapes accordingly
   svg2.selectAll(".shapecontainer")
     .attr("transform", function(d,i) {
       var myXform = d3.select(this).attr("transform");
@@ -150,16 +163,15 @@ function justDrawLinearSeparately(positions, symbol, positions2, symbol2) {
     });
 }
 
-
-
+// return a gaussian distribution of valid points (within bounds, not too many overlaps)
 function getGaussianDistribution(num) {
-  // var num = (which == 1) ? numShapes : numShapes2;
   var positions = [];
   var x, y;
 
   distribution = gaussian(mean, variance);
 
   for(var i = 0; i < num; i++) {
+    // sample until next point is valid
     do{
       x = distribution.ppf(Math.random());
       y = distribution.ppf(Math.random());
@@ -170,7 +182,7 @@ function getGaussianDistribution(num) {
   return positions;
 }
 
-// take the current set of positions and coerce them to a specific overlap percentage
+// take the current set of positions and coerce them close to a specific overlap percentage
 function coerceOverlaps(positions) {
   var x, y;
   var point;
@@ -178,8 +190,7 @@ function coerceOverlaps(positions) {
   var maxTries = 50; // tries before giving up
   var tries = 0;  // current tries
   var numToResample = 0; // guess at number of shapes to resample
-  var overlapPercentage = computeOverlapPercentage(positions);
-
+  var overlapPercentage = computeOverlapPercentage(positions);  // initial overlap
 
   // keep trying until tries are exhausted or we're close enough
   while((++tries < maxTries) &&
@@ -188,60 +199,54 @@ function coerceOverlaps(positions) {
     // guess half the difference between overlaps, or 1
     numToResample = Math.max(Math.abs(overlapPercentage - desiredOverlapPercentage) * 50, 1);
 
-    console.log('try: ', tries, overlapPercentage, desiredOverlapPercentage, numToResample);
+    // console.log('try: ', tries, overlapPercentage, desiredOverlapPercentage, numToResample);
 
-    // too many overlaps
+    // if too many overlaps
     if(overlapPercentage - desiredOverlapPercentage > 0) {
-      console.log('get rid of some overlaps');
+      // console.log('get rid of some overlaps');
+
       // resample some overlapping shapes (from gaussian distribution)
-      // find overlapping shapes
       for(var i = 0; i < numToResample; i++) {
         var idx = findOverlapping(positions); // get index of an overlap
-        // console.log('found', positions[idx], 'at index', idx);
         // if valid index...
         if(idx > 0 && idx < positions.length) {
           // find a new valid non-overlapping point
           do {
-
             point = sampleGaussian();
-            // console.log('resampling...', validOverlapPoint(point, positions), countOverlapsForPoint(point, positions));
           } while(!validOverlapPoint(point, positions) || countOverlapsForPoint(point, positions) > 0 );
 
-          // replace the point!
-          // console.log('replacing', positions[idx], 'with', point, 'at index', idx);
+          // replace the point
           positions[idx] = point;
         }
       }
     } else { // not enough overlaps
-      console.log('add some overlaps');
+      // console.log('add some overlaps');
+
       // resample a non-overlapping shape (from gaussian distribution)
-      // find non-overlapping shapes
       for(var i = 0; i < numToResample; i++) {
-        var idx = findNonOverlapping(positions); // get index of a non-overlap
-        // console.log('found', positions[idx], 'at index', idx);
+        var idx = findNonOverlapping(positions); // get index of a non-overlap;
         // if valid index...
         if(idx > 0 && idx < positions.length) {
-          // find a new valid non-overlapping point
+          // find a new valid overlapping point
           do {
             point = sampleGaussian();
-            // console.log('resampling...', validOverlapPoint(point, positions), countOverlapsForPoint(point, positions));
           } while(!validOverlapPoint(point, positions) || countOverlapsForPoint(point, positions) === 0 );
 
           // replace the point!
-          // console.log('replacing', positions[idx], 'with', point, 'at index', idx);
           positions[idx] = point;
         }
       }
-
     }
 
-    // update overlapPercentage
+    // update overlapPercentage before next try
     overlapPercentage = computeOverlapPercentage(positions);
   }
 
   return positions;
 }
 
+// take the current set of positions and coerce them close to a specific overlap percentage
+// take correlation value into account
 function coerceOverlapsWithCorrelation(positions) {
   var x, y;
   var point;
@@ -249,13 +254,8 @@ function coerceOverlapsWithCorrelation(positions) {
   var maxTries = 50; // tries before giving up
   var tries = 0;  // current tries
   var numToResample = 0; // guess at number of shapes to resample
-  var overlapPercentage = computeOverlapPercentage(positions);
-  var r = correlation(positions);
-
-  // console.log('!!',(++tries < maxTries),
-  //     Math.abs(overlapPercentage - desiredOverlapPercentage) > 0.025,
-  //     Math.abs(r - targetCorrelation) > 0.025);
-  //     console.log(r, targetCorrelation);
+  var overlapPercentage = computeOverlapPercentage(positions); // initial overlap
+  var r = correlation(positions); // initial correlation
 
   // keep trying until tries are exhausted or we're close enough
   //   (both to overlap percentage and linear correlation)
@@ -266,69 +266,56 @@ function coerceOverlapsWithCorrelation(positions) {
     // guess half the difference between overlaps, or 1
     numToResample = Math.max(Math.abs(overlapPercentage - desiredOverlapPercentage) * 50, 1);
 
-    console.log('(correlated) try: ', tries, overlapPercentage, desiredOverlapPercentage, numToResample, r, targetCorrelation);
+    // console.log('(correlated) try: ', tries, overlapPercentage, desiredOverlapPercentage, numToResample, r, targetCorrelation);
 
-    // too many overlaps
+    // if too many overlaps
     if(overlapPercentage - desiredOverlapPercentage > 0) {
-      console.log('get rid of some overlaps');
+      // console.log('get rid of some overlaps');
+
       // resample some overlapping shapes (from gaussian distribution)
-      // find overlapping shapes
       for(var i = 0; i < numToResample; i++) {
         var idx = findOverlapping(positions); // get index of an overlap
-        // console.log('found', positions[idx], 'at index', idx);
         // if valid index...
         if(idx > 0 && idx < positions.length) {
           // find a new valid non-overlapping point
           do {
-
             point = sampleGaussian();
-
-            // try using the lambda function here?
-            // TODO
-
-            // console.log('resampling...', validOverlapPoint(point, positions), countOverlapsForPoint(point, positions));
           } while(!validOverlapPoint(point, positions) || countOverlapsForPoint(point, positions) > 0 );
 
-          // replace the point!
-          // console.log('replacing', positions[idx], 'with', point, 'at index', idx);
+          // replace the point
           positions[idx] = point;
         }
       }
     } else { // not enough overlaps
       console.log('add some overlaps');
+
       // resample a non-overlapping shape (from gaussian distribution)
-      // find non-overlapping shapes
       for(var i = 0; i < numToResample; i++) {
         var idx = findNonOverlapping(positions); // get index of a non-overlap
-        // console.log('found', positions[idx], 'at index', idx);
         // if valid index...
         if(idx > 0 && idx < positions.length) {
-          // find a new valid non-overlapping point
+          // find a new valid overlapping point
           do {
             point = sampleGaussian();
-
-            // try using the lambda function here?
-            // TODO
-
-            // console.log('resampling...', validOverlapPoint(point, positions), countOverlapsForPoint(point, positions));
           } while(!validOverlapPoint(point, positions) || countOverlapsForPoint(point, positions) === 0 );
 
-          // replace the point!
-          // console.log('replacing', positions[idx], 'with', point, 'at index', idx);
+          // replace the point
           positions[idx] = point;
         }
       }
-
     }
 
-    // update overlapPercentage
+    // update overlapPercentage before next try
     overlapPercentage = computeOverlapPercentage(positions);
+
+    // update correlation before next try
     r = correlation(positions);
   }
 
   return positions;
 }
 
+// sample a new point from the distribution
 function sampleGaussian() {
   x = distribution.ppf(Math.random());
   y = distribution.ppf(Math.random());
@@ -339,7 +326,6 @@ function sampleGaussian() {
 function findOverlapping(positions) {
   for(var i = 1; i < positions.length; i+=2) {
     if(countOverlapsForPointAtIndex(i, positions) > 0) {
-      // console.log('eureka, found an index with overlaps!', i);
       return i;
     }
   }
@@ -350,7 +336,6 @@ function findOverlapping(positions) {
 function findNonOverlapping(positions) {
   for(var i = 1; i < positions.length; i+=2) {
     if(countOverlapsForPointAtIndex(i, positions) === 0) {
-      // console.log('eureka, found an index with no overlaps!', i);
       return i;
     }
   }
@@ -359,9 +344,9 @@ function findNonOverlapping(positions) {
 
 // return a set of [num] points within .02 of the target correlation value
 function getCorrelatedDistribution(num) {
-  // var num = (which == 1) ? numShapes : numShapes2;
   var positions, x, y;
 
+  // try to get a guassian distribution close to desired correlation
   do {
     positions = [];
     distribution = gaussian(mean, variance);
@@ -383,7 +368,7 @@ function getCorrelatedDistribution(num) {
     thisCenter[0] - center[0],
     thisCenter[1] - center[1]
   ];
-
+  
   for(i = 0; i < num; i++) {
     positions[i][0] -= deltas[0];
     positions[i][1] -= deltas[1];
