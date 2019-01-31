@@ -81,6 +81,7 @@ function sendStimulusData() {
     data.overlap2 = computeOverlapPercentage(getPositions(2));
   }
 
+  // for linear trend tasks, note the correlations of both sets
   if(task == 'linear') {
     if(mode == 1) {
       var sets = splitPositions(getPositions(1));
@@ -90,6 +91,11 @@ function sendStimulusData() {
       data.correlation1 = correlation(getPositions(1));
       data.correlation2 = correlation(getPositions(2));
     }
+  }
+
+  if(task == 'numerosity') {
+    data.numShapes1 = numShapes;
+    data.numShapes2 = numShapes2;
   }
 
   data.task = task;

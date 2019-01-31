@@ -1,7 +1,19 @@
 var task = 'numerosity';
 
 function swapSides() {
-  drawNumerositySeparately(getPositions(2), symbol2, numShapes2, getPositions(1), symbol1, numShapes1);
+  var tmp;
+
+  // swap symbols
+  tmp = symbol2;
+  symbol2 = symbol1;
+  symbol1 = tmp;
+
+  // swap number
+  tmp = numShapes2;
+  numShapes2 = numShapes;
+  numShapes = tmp;
+
+  drawNumerositySeparately(getPositions(2), symbol1, numShapes, getPositions(1), symbol2, numShapes2);
 }
 
 function redrawSymbols() {
@@ -82,7 +94,6 @@ function drawNumerositySeparately(positions, symbol, count, positions2, symbol2,
   let drawn = 0, drawn2 = 0;
 
   // left
-
   svg.selectAll(".shapecontainer").remove();
   s = svg.selectAll(".shape")
           .data([...Array(positions.length).keys()])
