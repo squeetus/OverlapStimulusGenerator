@@ -16,7 +16,7 @@ fs.readdir(dir, (err, files) => {
   }
 });
 
-app.get('/', (req, res) => res.sendFile(__dirname + '/public/stimulus.html'));
+app.get('/', (req, res) => res.sendFile(__dirname + '/public/practice.html'));
 
 app.get('/numerosity', (req, res) => res.sendFile(__dirname + '/public/numerosity.html'));
 

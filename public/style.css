@@ -21,3 +21,14 @@ svg {
   stroke: #ccc;
   shape-rendering: crispEdges;
 }
+
+#practiceShapes {
+  padding: 50px;
+  margin: auto;
+  font-size:35px;
+  font-family:Sans,Arial;
+}
+
+.practiceItem {
+  width: 150px;
+}
