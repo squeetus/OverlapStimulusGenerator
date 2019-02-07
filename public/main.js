@@ -19,7 +19,7 @@ var desiredOverlapPercentage2 = 0.7;
 
 // master correlation target for all linear trend displays
 // (we only want to vary overlap percentage for difficulty)
-var targetCorrelation = 0.7;
+var targetCorrelation = 0.6;
 
 var overlapThreshold = 4; // max number of overlaps for a new overlapping position
 
